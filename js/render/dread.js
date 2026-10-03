@@ -8,19 +8,22 @@ import * as THREE from 'three';
 //
 // The frame renders at low resolution into a half-float target with depth. One post pass then
 // quantises it. There are three styles:
-//   pigment (default) — full colour, snapped to a fixed palette of Egyptian pigments (lapis,
+//   pigment — full colour, snapped to a fixed palette of Egyptian pigments (lapis,
 //            turquoise, ochre, red ochre, gold, bone and a run of warm darks) through an
 //            ordered dither. Multi-colour, but every pixel is one of ~32 inks.
-//   dagger  — Devil Daggers' near-mono: one warm ramp, fire/danger/reward as accent ramps.
+//   dagger (default) — Devil Daggers' near-mono: one warm ramp; fire, danger, reward and the
+//            lit glyphs keep their own accent ramps, so the only colour left is the colour
+//            that means something.
 //   sincity — labyrinth-larry's ink: paper, ink, hatching, one accent.
-// dagger and sincity need material *roles* (mono / fire / blood / gold): each material writes
-// grey or a pure channel at its brightness. One shared uniform switches that off for pigment,
+// dagger and sincity need material *roles* (mono / fire / blood / gold / glyph): each material
+// writes grey or a pure channel at its brightness (glyph writes green + blue). A mono material
+// with a turquoise emissive map (the glowing signs on a wall) writes glyph where the glow wins. One shared uniform switches that off for pigment,
 // so all three styles run on the same materials with no recompile.
 // Every style draws depth edges in the opposite tone: ink on lit shapes, a faint dithered rim
 // on dark ones that fades with distance, so monsters walking out of the dark arrive as
 // outlines before they arrive lit.
 
-export const ROLES = { mono: 0, fire: 1, blood: 2, gold: 3 };
+export const ROLES = { mono: 0, fire: 1, blood: 2, gold: 3, glyph: 4 };
 
 // Egyptian pigments plus the darks that torchlight falls off through. Order is irrelevant.
 const PIGMENTS = [
@@ -51,6 +54,7 @@ export const STYLES = {
     fire: ['#000000', '#5a1004', '#c8380a', '#ff8c1a', '#fff0b0'],
     blood: ['#000000', '#3c0008', '#8e0614', '#ff1e32', '#ffd2c8'],
     gold: ['#000000', '#3a2a06', '#9a6c10', '#ffc838', '#fff6c8'],
+    glyph: ['#000000', '#06201a', '#1e6e58', '#46e0bc', '#c8fff0'],
     gamma: 1.25,
   },
   sincity: {
@@ -59,6 +63,7 @@ export const STYLES = {
     fire: ['#000000', '#000000', '#ff2a1a', '#ff2a1a', '#ffffff'],
     blood: ['#000000', '#000000', '#ff1a2a', '#ff1a2a', '#ff1a2a'],
     gold: ['#000000', '#000000', '#ffffff', '#ffffff', '#ffffff'],
+    glyph: ['#000000', '#000000', '#ffffff', '#ffffff', '#ffffff'],
     gamma: 1.0,
   },
 };
@@ -66,12 +71,23 @@ export const STYLES = {
 // 1 = materials write their role; 0 = materials keep their colour (pigment).
 export const roleUniform = { value: 0 };
 
+const ROLE_CODE_MONO = 'gl_FragColor.rgb = vec3(dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114)));';
 const ROLE_CODE = {
-  mono: 'gl_FragColor.rgb = vec3(dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114)));',
+  mono: ROLE_CODE_MONO,
   fire: 'gl_FragColor.rgb = vec3(max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b)), 0.0, 0.0);',
   blood: 'gl_FragColor.rgb = vec3(0.0, max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b)), 0.0);',
   gold: 'gl_FragColor.rgb = vec3(0.0, 0.0, max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b)));',
+  glyph: 'gl_FragColor.rgb = vec3(0.0, vec2(max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b))));',
 };
+// mono, on a lit material with an emissive map: where a turquoise glow outshines the stone,
+// the pixel is a lit sign, so it writes the glyph role instead of grey
+const MONO_GLOW = `{
+  vec3 em = totalEmissiveRadiance;
+  float e = max(em.r, max(em.g, em.b));
+  float a = max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b));
+  if (e > 0.2 && em.g > em.r * 1.4) gl_FragColor.rgb = vec3(0.0, a, a);
+  else ${ROLE_CODE_MONO}
+}`;
 
 // Give an object (and everything under it) or a material a role. First role set wins.
 export function role(target, r) {
@@ -85,12 +101,14 @@ function patch(m) {
   if (m.userData.dreadPatched || m.isShaderMaterial) return;
   m.userData.dreadPatched = true;
   const r = m.userData.role || 'mono';
+  const glowing = r === 'mono' && m.emissiveMap;      // a glyph wall: its signs keep their own ramp
+  const code = glowing ? MONO_GLOW : ROLE_CODE[r];
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uRoles = roleUniform;
     sh.fragmentShader = 'uniform float uRoles;\n' + sh.fragmentShader.replace('#include <fog_fragment>',
-      `#include <fog_fragment>\nif (uRoles > 0.5) { ${ROLE_CODE[r]} }`);
+      `#include <fog_fragment>\nif (uRoles > 0.5) { ${code} }`);
   };
-  m.customProgramCacheKey = () => 'dread-' + r;
+  m.customProgramCacheKey = () => 'dread-' + r + (glowing ? '-glow' : '');
   m.needsUpdate = true;
 }
 
@@ -107,17 +125,19 @@ const pick = (name, n) => `vec3 ${name}At(float i) {\n` +
 const MAXPAL = 40;
 const FRAG = /* glsl */`
   uniform sampler2D tColor; uniform sampler2D tDepth;
-  uniform vec2 uRes; uniform float uTime; uniform float uMode; uniform float uGamma; uniform float uSpread;
+  uniform vec2 uRes; uniform float uTime; uniform float uMode; uniform float uGamma; uniform float uSpread; uniform float uExposure;
   uniform float uNear; uniform float uFar; uniform float uEdgeFar; uniform vec3 uRimC;
   uniform vec3 uPal[${MAXPAL}]; uniform int uPalN;
   ${ramp('uM', 6)}
   ${ramp('uF', 5)}
   ${ramp('uB', 5)}
   ${ramp('uG', 5)}
+  ${ramp('uY', 5)}
   ${pick('uM', 6)}
   ${pick('uF', 5)}
   ${pick('uB', 5)}
   ${pick('uG', 5)}
+  ${pick('uY', 5)}
   varying vec2 vUv;
 
   float bayer4(vec2 fc) {
@@ -146,7 +166,7 @@ const FRAG = /* glsl */`
     return best;
   }
   void main() {
-    vec3 c = max(texture2D(tColor, vUv).rgb, 0.0);
+    vec3 c = max(texture2D(tColor, vUv).rgb, 0.0) * uExposure; // Brightness: lifts lit surfaces, black stays black
     vec2 fc = gl_FragCoord.xy;
     float b = bayer4(fc);
     float z = viewZ(vUv);
@@ -161,8 +181,10 @@ const FRAG = /* glsl */`
     } else {
       float mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b));
       bool accent = mx > 0.0005 && (mx - mn) > 0.6 * mx;
+      bool glyph = accent && c.r < 0.25 * mx && abs(c.g - c.b) < 0.25 * mx;
       if (uMode < 0.5) {
-        if (accent) {
+        if (glyph) col = uYAt(dstep(pow(mx, 1.0 / 2.2), 5.0, b));
+        else if (accent) {
           float a = pow(mx, 1.0 / 2.2);
           if (c.r >= c.g && c.r >= c.b) col = uFAt(dstep(a, 5.0, b));
           else if (c.g >= c.b) col = uBAt(dstep(a, 5.0, b));
@@ -175,7 +197,8 @@ const FRAG = /* glsl */`
         float h1 = step(0.75, fract((p.x + p.y) / 4.0));
         float h2 = step(0.5, fract((p.x + p.y) / 4.0));
         float h3 = max(h2, step(0.75, fract((p.x - p.y) / 4.0)));
-        if (accent) {
+        if (glyph) col = pow(mx, 1.0 / 2.2) > 0.3 ? uY4 : uM0;
+        else if (accent) {
           float a = pow(mx, 1.0 / 2.2);
           vec3 acc = (c.r >= c.g && c.r >= c.b) ? uF2 : (c.g >= c.b ? uB2 : uG2);
           vec3 hot = (c.r >= c.g && c.r >= c.b) ? uF4 : (c.g >= c.b ? uB4 : uG4);
@@ -215,12 +238,12 @@ export class DreadPass {
     const u = {
       tColor: { value: this.rt.texture }, tDepth: { value: this.rt.depthTexture },
       uRes: { value: new THREE.Vector2(4, 4) }, uTime: { value: 0 }, uMode: { value: 2 }, uGamma: { value: 1 },
-      uSpread: { value: 0.16 }, uNear: { value: 0.05 }, uFar: { value: 200 }, uEdgeFar: { value: 16 },
+      uSpread: { value: 0.16 }, uExposure: { value: 1 }, uNear: { value: 0.05 }, uFar: { value: 200 }, uEdgeFar: { value: 16 },
       uRimC: { value: new THREE.Color() },
       uPal: { value: Array.from({ length: MAXPAL }, () => new THREE.Vector3()) }, uPalN: { value: 1 },
     };
     for (let i = 0; i < 6; i++) u['uM' + i] = { value: new THREE.Color() };
-    for (const k of ['uF', 'uB', 'uG']) for (let i = 0; i < 5; i++) u[k + i] = { value: new THREE.Color() };
+    for (const k of ['uF', 'uB', 'uG', 'uY']) for (let i = 0; i < 5; i++) u[k + i] = { value: new THREE.Color() };
     this.uniforms = u;
     this.mat = new THREE.ShaderMaterial({
       uniforms: u, depthTest: false, depthWrite: false,
@@ -244,7 +267,7 @@ export class DreadPass {
     u.uMode.value = s.mode; u.uGamma.value = s.gamma; u.uSpread.value = s.spread ?? 0.16;
     u.uRimC.value.set(s.rim);
     s.mono.forEach((c, i) => u['uM' + i].value.set(c));
-    for (const [k, key] of [['uF', 'fire'], ['uB', 'blood'], ['uG', 'gold']]) (s[key] || s.mono).slice(0, 5).forEach((c, i) => u[k + i].value.set(c));
+    for (const [k, key] of [['uF', 'fire'], ['uB', 'blood'], ['uG', 'gold'], ['uY', 'glyph']]) (s[key] || s.mono).slice(0, 5).forEach((c, i) => u[k + i].value.set(c));
     // the palette is matched in gamma space, so it is stored as raw sRGB triples
     const pal = s.palette || [];
     pal.forEach((hex, i) => { const n = parseInt(hex.slice(1), 16); u.uPal.value[i].set((n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255); });

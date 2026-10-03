@@ -83,6 +83,7 @@
   /* styles comparison */
   .trio { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
   .trio figure { margin: 0; display: grid; gap: 8px; }
+  .trio img { display: block; width: 100%; height: auto; }
   .trio figcaption b { color: var(--bone); font-family: var(--display); font-weight: 400; font-size: 19px; display: block; }
   .pick { color: var(--ember); }
 
@@ -107,9 +108,24 @@
     <div class="eyebrow">Concept art · in-engine renders, no paintover</div>
     <h1>Hell <span>Hole</span></h1>
     <p class="lede">A first-person tomb shooter. Twin 1911s, torchlight, and whatever is still awake under the sand. Every level is a staircase further down.</p>
-    <div class="tags"><span class="tag">Devil Daggers dither</span><span class="tag">Powerslave tombs</span><span class="tag">Sin City ink edges</span><span class="tag">three.js · 270 lines</span></div>
-    <img class="px frame" src="shots/hallway.png" width="480" height="270" alt="First-person view down a torch-lit tomb corridor. Twin M1911 pistols, the right one firing. A mummy with a glowing crimson heart shambles out of the dark; a swarm of turquoise scarabs with red eyes crawls on the floor; a glowing ankh is carved on the wall.">
-    <p class="cap">Depth I, the Descending Corridor. Rendered at 480 × 270 through the game's own post pass and shown with hard pixels.</p>
+    <div class="tags"><span class="tag">Devil Daggers dither</span><span class="tag">Powerslave tombs</span><span class="tag">Sin City ink edges</span><span class="tag">three.js · 360 lines</span></div>
+    <img class="px frame" src="shots/hallway.png" width="640" height="360" alt="First-person view down a torch-lit tomb corridor in warm near-monochrome. Twin M1911 pistols, the right one firing. Mummies with glowing crimson eyes shamble out of the dark; scarabs crawl on the floor; a turquoise ankh glows on the wall.">
+    <p class="cap">Depth I, the Descending Corridor, in the Dagger look. Rendered at 640 × 360 through the game's own post pass and shown with hard pixels.</p>
+  </section>
+
+
+  <section class="depth" aria-labelledby="play">
+    <header>
+      <div class="eyebrow">Playable now</div>
+      <h2 id="play">Depth I prototype</h2>
+      <p>The first depth is playable: the descending corridor, the antechamber, your squad's last stand and the hall of pillars, down to the scarab door. Twin 1911s, the squad's Remington 870, a 1940s crate of Mk 2 grenades, mummies and scarab swarms. Mouse and keyboard, gamepad or touch.</p>
+      <p><a href="https://claude.ai/artifact/LgwBE6F1kzjzdbSh2d6EX7">Play Hell Hole: Depth I</a></p>
+    </header>
+    <div class="trio">
+      <figure><img class="frame" src="shots/play/mummy.png" width="1280" height="720" alt="In-game: a mummy steps up close in a dark corridor, its heart scarab glowing crimson, both 1911s raised."><figcaption class="cap">The first of the Wrapped, close enough to see the heart scarab.</figcaption></figure>
+      <figure><img class="frame" src="shots/play/scarabs.png" width="1280" height="720" alt="In-game: a scarab nest opens in a torch-lit corridor and the swarm pours toward the player."><figcaption class="cap">A nest opens. The floor is moving.</figcaption></figure>
+      <figure><img class="frame" src="shots/play/hall.png" width="1280" height="720" alt="In-game: the hall of pillars lit by braziers, the Remington 870 in hand."><figcaption class="cap">The hall of pillars, with the squad's 870.</figcaption></figure>
+    </div>
   </section>
 
   <section class="depth" aria-labelledby="look">
@@ -119,13 +135,13 @@
     </header>
     <div class="pillars">
       <div class="pillar"><h3>Darkness by default</h3><p>No ambient light worth the name. Small torches every 7 m in passages, big bronze braziers in rooms. Between them the stone falls to black, and the next torch down the hall is a pinprick you walk toward.</p></div>
-      <div class="pillar"><h3>Pigment dither</h3><p>Full colour, snapped to 36 inks through a 4×4 ordered dither: the scribes' lapis, turquoise, red ochre, yellow ochre and carbon black, plus a run of warm darks for torchlight to fall off through.</p></div>
+      <div class="pillar"><h3>Dagger ramp</h3><p>Devil Daggers' near-monochrome: one warm ramp from black to bone through a 4×4 ordered dither. Only four things keep their colour: fire, crimson danger, gold reward and the turquoise of a lit sign.</p></div>
       <div class="pillar"><h3>Ink edges</h3><p>From labyrinth-larry's Sin City pass: depth edges drawn in the opposite tone. On lit shapes they are ink; in the dark they are a faint dithered rim, so a monster arrives as an outline before it arrives lit.</p></div>
       <div class="pillar"><h3>Colour is a signal</h3><p>Crimson is danger and only danger: eyes, heart scarabs, weak points. Turquoise light is a sign that means something. Gold marks the way on. Fire is the only warm glow.</p></div>
     </div>
     <div class="stack">
-      <div class="swatches" id="swatches" aria-label="The 36-ink palette"></div>
-      <div class="legend"><span>warm darks → limestone → bone</span><span>red ochre · crimson</span><span>lapis</span><span>turquoise</span><span>glyph glow</span><span>fire · gold</span><span>shadow violet</span></div>
+      <div class="swatches" id="swatches" aria-label="The Dagger ramps"></div>
+      <div class="legend"><span>stone: black → bone</span><span>fire</span><span>danger</span><span>reward</span><span>lit sign</span></div>
     </div>
   </section>
 
@@ -133,7 +149,7 @@
     <header>
       <div class="eyebrow">The glyph language</div>
       <h2 id="signs">Only three signs ever light up</h2>
-      <p>Thousands of glyphs are carved and painted on the walls, and nearly all of them stay dark. A sign that glows is rare, and it always means the same thing, so players learn to read the walls.</p>
+      <p>Thousands of glyphs are carved and painted on the walls, and in play none of them glow on their own. A lit sign is placed on purpose and always means the same thing, so players learn to read the walls.</p>
     </header>
     <div class="glyphs">
       <div class="sign">
@@ -157,7 +173,7 @@
       <h2 id="d2">Hypostyle of Night</h2>
     </header>
     <div class="split">
-      <img class="px frame" src="shots/hall.png" width="480" height="270" alt="A huge pillared hall lit by bronze braziers. Jackal-headed wardens advance between painted columns, a floating canopic jar with a flock of winged skulls hangs in the dark beyond, both pistols firing.">
+      <img class="px frame" src="shots/hall.png" width="640" height="360" alt="A huge pillared hall lit by bronze braziers. Jackal-headed wardens advance between painted columns, a floating canopic jar with a flock of winged skulls hangs in the dark beyond, both pistols firing.">
       <div class="notes">
         <p><b>Rooms are arenas.</b> Papyrus columns with painted bands, a lapis ceiling of stars you mostly can't see, and four or five braziers that set where you can see to fight.</p>
         <p><b>Jackal Wardens</b> hold the light. The <b>Canopic Mother</b> floats at the back, birthing a flock of ba. Kill her first or the room never empties.</p>
@@ -172,7 +188,7 @@
       <h2 id="d3">The Well</h2>
     </header>
     <div class="split">
-      <img class="px frame" src="shots/descent.png" width="480" height="270" alt="Looking straight down a square burial shaft. Torches burn on every corner landing of a stair that spirals down the walls with no rail, getting smaller and dimmer toward a brazier glowing at the bottom. Winged skulls circle in the shaft.">
+      <img class="px frame" src="shots/descent.png" width="640" height="360" alt="Looking straight down a square burial shaft. Torches burn on every corner landing of a stair that spirals down the walls with no rail, getting smaller and dimmer toward a brazier glowing at the bottom. Winged skulls circle in the shaft.">
       <div class="notes">
         <p><b>Every level ends by going down.</b> Here it's a burial shaft with a bare stair round its walls and no rail, a torch on every landing. Ba circle in the void and dive at you on the steps.</p>
         <p><b>The bottom</b> is a brazier and a gilded door with the scarab lit on its jambs. Walk through it and the next depth loads.</p>
@@ -186,7 +202,7 @@
       <h2 id="d4">Hall of Two Truths</h2>
     </header>
     <div class="split">
-      <img class="px frame" src="shots/boss.png" width="480" height="270" alt="A colossal basalt hall with braziers either side of Ammit, a beast with a crocodile head, a lion's mane and forequarters, and hippo hindquarters, its jaws open and glowing. The left pistol fires.">
+      <img class="px frame" src="shots/boss.png" width="640" height="360" alt="A colossal basalt hall with braziers either side of Ammit, a beast with a crocodile head, a lion's mane and forequarters, and hippo hindquarters, its jaws open and glowing. The left pistol fires.">
       <div class="notes">
         <p><b>Ammit, Devourer of the Dead</b>, waits under the Scales of Ma'at in a hall of seated Anubis colossi.</p>
         <p><b>Proposed fight:</b> she charges and snaps between the braziers. Shoot the crimson heart on the scales to tip them; while the feather outweighs the heart, she is stunned and her open gullet takes triple damage.</p>
@@ -202,43 +218,43 @@
     </header>
     <div class="beasts">
       <article class="beast">
-        <img class="px frame" src="shots/mummy.png" width="216" height="270" alt="A mummy in stained linen wraps, hunched, one arm reaching forward, a crimson heart scarab glowing in a torn hole in its chest.">
+        <img class="px frame" src="shots/mummy.png" width="288" height="360" alt="A mummy in stained linen wraps, hunched, one arm reaching forward, a crimson heart scarab glowing in a torn hole in its chest.">
         <div class="role">Shambler · corridors</div><h3>The Wrapped</h3>
         <p>Slow, heavy, and they step out of wall niches behind you. They take a magazine to the body and grab if they reach you.</p>
         <div class="weak">Weak point: the heart scarab. One shot.</div>
       </article>
       <article class="beast">
-        <img class="px frame" src="shots/scarab.png" width="216" height="270" alt="A swarm of iridescent turquoise scarab beetles with tiny red eyes crawling across flagstones.">
+        <img class="px frame" src="shots/scarab.png" width="288" height="360" alt="A swarm of iridescent turquoise scarab beetles with tiny red eyes crawling across flagstones.">
         <div class="role">Swarm · floors and walls</div><h3>Scarabs</h3>
         <p>Twenty to forty at a time, pouring from cracks and climbing the walls. One bullet each. This is the Devil Daggers pressure: never stop moving.</p>
         <div class="weak">Weak point: everything. There are just a lot of them.</div>
       </article>
       <article class="beast">
-        <img class="px frame" src="shots/jackal.png" width="216" height="270" alt="A tall black jackal-headed warrior with a striped lapis, turquoise, red and gold collar, a pleated linen kilt and a raised bronze khopesh.">
+        <img class="px frame" src="shots/jackal.png" width="288" height="360" alt="A tall black jackal-headed warrior with a striped lapis, turquoise, red and gold collar, a pleated linen kilt and a raised bronze khopesh.">
         <div class="role">Guard · rooms</div><h3>Jackal Warden</h3>
         <p>2.5 m tall with a khopesh. They hold the brazier light, close fast, and telegraph a raised blade before the slash.</p>
         <div class="weak">Weak point: the head, between the crimson eyes.</div>
       </article>
       <article class="beast">
-        <img class="px frame" src="shots/ba.png" width="216" height="270" alt="A human skull with crimson pinpoint eyes, carried on falcon wings painted in lapis, turquoise and red feather bands.">
+        <img class="px frame" src="shots/ba.png" width="288" height="360" alt="A human skull with crimson pinpoint eyes, carried on falcon wings painted in lapis, turquoise and red feather bands.">
         <div class="role">Flock · the air</div><h3>Ba</h3>
         <p>A skull on painted falcon wings. They circle overhead in flocks, then dive one at a time. Our answer to Devil Daggers' skulls.</p>
         <div class="weak">Weak point: two shots anywhere.</div>
       </article>
       <article class="beast">
-        <img class="px frame" src="shots/canopic.png" width="216" height="270" alt="A tall floating alabaster canopic jar with painted bands and a black jackal-head lid, crimson light leaking through its cracks, linen tendrils trailing beneath and a winged skull leaving it.">
+        <img class="px frame" src="shots/canopic.png" width="288" height="360" alt="A tall floating alabaster canopic jar with painted bands and a black jackal-head lid, crimson light leaking through its cracks, linen tendrils trailing beneath and a winged skull leaving it.">
         <div class="role">Spawner · rooms</div><h3>Canopic Mother</h3>
         <p>A floating jar the height of a man, with a son of Horus for a lid. Ba hatch from her mouth and scarabs fall from her cracks. She is the priority target.</p>
         <div class="weak">Weak point: the crimson cracks. Each one shot widens it.</div>
       </article>
       <article class="beast">
-        <img class="px frame" src="shots/scorpion.png" width="216" height="270" alt="A scorpion the size of a horse in red-bronze chitin, tail curled overhead, its stinger glowing crimson.">
+        <img class="px frame" src="shots/scorpion.png" width="288" height="360" alt="A scorpion the size of a horse in red-bronze chitin, tail curled overhead, its stinger glowing crimson.">
         <div class="role">Heavy · open floors</div><h3>Serqet</h3>
         <p>A scorpion the size of a horse. The tail strikes from three metres and pins you; the claws block shots from the front.</p>
         <div class="weak">Weak point: the stinger, while it is raised.</div>
       </article>
       <article class="beast boss">
-        <img class="px frame" src="shots/ammit.png" width="216" height="270" alt="Ammit: a crocodile head with open toothed jaws, a lion's orange mane and forequarters, grey hippo hindquarters and a gold and lapis pectoral.">
+        <img class="px frame" src="shots/ammit.png" width="288" height="360" alt="Ammit: a crocodile head with open toothed jaws, a lion's orange mane and forequarters, grey hippo hindquarters and a gold and lapis pectoral.">
         <div class="stack" style="align-content:start">
           <div class="role">Boss · Depth IV</div><h3>Ammit, Devourer of the Dead</h3>
           <p>Crocodile head, lion's mane and forequarters, hippo's hindquarters, about five metres long. In the myth she eats the hearts that fail the weighing. Here she eats the ones that fail to keep moving.</p>
@@ -254,9 +270,9 @@
       <h2 id="guns">Twin 1911s</h2>
     </header>
     <div class="split">
-      <img class="px frame" src="shots/guns.png" width="480" height="270" alt="Close view of two blued M1911A1 pistols held in gloved hands with rolled khaki sleeves. The left one is firing a star-shaped muzzle flash at a mummy in a dark corridor.">
+      <img class="px frame" src="shots/guns.png" width="640" height="360" alt="Close view of two M1911A1 pistols in black fingerless gloves with rolled woodland camouflage sleeves. The left one fires a star-shaped muzzle flash at a mummy in a dark corridor.">
       <div class="notes">
-        <p><b>M1911A1, akimbo.</b> Built 1:1 (216 mm long) from primitives: blued slide and frame, walnut grips, rolled khaki sleeves and fingerless gloves.</p>
+        <p><b>A 1980s soldier.</b> M81 woodland sleeves rolled to the elbow, black fingerless gloves, a digital watch. The M1911A1 was still the US sidearm until 1985, so he carries two, built 1:1 (216 mm long).</p>
         <p><b>Proposed:</b> .45 ACP, 7 + 1 in each gun. Each trigger fires its own gun, so you can alternate for rhythm or fire both for burst damage. Reloads are per gun.</p>
         <p><b>Firing is light.</b> The muzzle flash is a real light, so in a dark room your own shots show you what's there.</p>
       </div>
@@ -267,30 +283,30 @@
     <header>
       <div class="eyebrow">Arsenal</div>
       <h2 id="arms">Five ways to make light</h2>
-      <p>Every weapon past the 1911s is also a light source, so choosing a gun is also choosing how much of the room you get to see.</p>
+      <p>The soldier brings his 1911s and the squad's Remington 870. The bazooka and the Mk 2 grenades are finds: a 1940s expedition went into the pyramid and left its kit behind. The Staff of Ra is older than all of them. Every weapon is also a light source.</p>
     </header>
-    <img class="px frame" src="shots/arsenal.png" width="480" height="270" alt="A torch-lit stone altar draped in a linen shroud. On it lie a pump trench shotgun, an olive bazooka, the gold and lapis Staff of Ra with its glowing sun disk, two M1911 pistols, three pineapple grenades and red shotgun shells.">
+    <img class="px frame" src="shots/arsenal.png" width="640" height="360" alt="A torch-lit stone altar draped in a linen shroud. On it lie a pump trench shotgun, an olive bazooka, the gold and lapis Staff of Ra with its glowing sun disk, two M1911 pistols, three pineapple grenades and red shotgun shells.">
     <div class="beasts">
       <article class="beast">
-        <img class="px frame" src="shots/shotgun.png" width="480" height="270" alt="A pump trench shotgun fires point-blank into a Jackal Warden in a torch-lit corridor; pellet sparks burst on its chest.">
-        <div class="role">Close · 6 shells</div><h3>Trench Gun</h3>
-        <p>A Model 1897-pattern pump with a perforated heat shield. Nine pellets of buckshot. Hold the trigger and work the pump to slam-fire, as the real one could.</p>
+        <img class="px frame" src="shots/shotgun.png" width="640" height="360" alt="A Remington 870 fires point-blank into a Jackal Warden in a torch-lit corridor; pellet sparks burst on its chest.">
+        <div class="role">Close · 7 shells · his own</div><h3>Remington 870</h3>
+        <p>The squad's pump gun: walnut stock, ribbed forend, seven in the tube. Nine pellets of 00 buck. In Depth I you find it with the first of your squad.</p>
         <div class="weak">Staggers Jackal Wardens. Clears a scarab carpet in two shots.</div>
       </article>
       <article class="beast">
-        <img class="px frame" src="shots/rocket.png" width="480" height="270" alt="An olive bazooka on the right shoulder; its rocket streaks away down a pillared hall trailing smoke and fire toward two jackal wardens.">
-        <div class="role">Splash · 1 + 6 rockets</div><h3>Bazooka</h3>
-        <p>An M1-pattern tube on the shoulder. The rocket is a moving light: fire one down a dark hall and see what it passes on the way.</p>
+        <img class="px frame" src="shots/rocket.png" width="640" height="360" alt="An olive bazooka on the right shoulder; its rocket streaks away down a pillared hall trailing smoke and fire toward two jackal wardens.">
+        <div class="role">Splash · found · 1940s</div><h3>Bazooka</h3>
+        <p>An M1-pattern tube the 1940s expedition carried in. The rocket is a moving light: fire one down a dark hall and see what it passes on the way.</p>
         <div class="weak">Back-blast hurts if your back is to a wall.</div>
       </article>
       <article class="beast">
-        <img class="px frame" src="shots/grenade.png" width="480" height="270" alt="The left hand raises a pineapple grenade while the right holds a 1911; down the corridor an earlier grenade explodes in a fireball, throwing scarabs into the air.">
-        <div class="role">Thrown · left hand</div><h3>Mk 2 Grenades</h3>
-        <p>Cook, throw, bounce. The left hand throws while the right keeps its 1911. The blast lights the corridor red for a second and breaks up swarms.</p>
+        <img class="px frame" src="shots/grenade.png" width="640" height="360" alt="The left hand raises a pineapple grenade while the right holds a 1911; down the corridor an earlier grenade explodes, throwing scarabs into the air.">
+        <div class="role">Thrown · found · 1940s</div><h3>Mk 2 Grenades</h3>
+        <p>A crate of them, stencilled and rotting, from the same expedition. The left hand throws while the right keeps its 1911. The blast lights the corridor for a second and breaks up swarms.</p>
         <div class="weak">Throws scarabs into the air, and for once they're the ones in danger.</div>
       </article>
       <article class="beast">
-        <img class="px frame" src="shots/staff.png" width="480" height="270" alt="The Staff of Ra, gold and lapis with a falcon head and sun disk, throws a beam of golden sunlight across a pillared hall into the Canopic Mother, lighting her ba flock gold.">
+        <img class="px frame" src="shots/staff.png" width="640" height="360" alt="The Staff of Ra, gold and lapis with a falcon head and sun disk, throws a beam of golden sunlight across a pillared hall into the Canopic Mother, lighting her ba flock gold.">
         <div class="role">Relic · beam</div><h3>Staff of Ra</h3>
         <p>Found at Depth III. A gold and lapis staff crowned by Ra's falcon and the sun disk, throwing a beam of sunlight that burns through a line of enemies. It is the only white light in the underworld.</p>
         <div class="weak">It runs on stored sun: hold the disk in a brazier to recharge.</div>
@@ -301,18 +317,18 @@
   <section class="depth" aria-labelledby="styles">
     <header>
       <div class="eyebrow">Same frame, three looks</div>
-      <h2 id="styles">Pigment, Dagger, Sin City</h2>
-      <p>One post pass, three settings, no material changes. Pigment is the direction. Dagger is the near-mono Devil Daggers ramp. Sin City is labyrinth-larry's two-tone ink, kept as an unlockable.</p>
+      <h2 id="styles">Dagger, Pigment, Sin City</h2>
+      <p>One post pass, three settings, no material changes. Dagger is the direction. Pigment is full colour through 36 Egyptian inks. Sin City is labyrinth-larry's two-tone ink. All three are in the game's settings.</p>
     </header>
     <div class="trio">
-      <figure><img class="px frame" src="shots/hallway.png" width="480" height="270" alt="Corridor in the Pigment style: full colour, dithered."><figcaption class="cap"><b class="pick">Pigment · default</b>Full colour through 36 inks. Turquoise signs, crimson eyes, red ochre paint.</figcaption></figure>
-      <figure><img class="px frame" src="shots/hallway.dagger.png" width="480" height="270" alt="Corridor in the Dagger style: one warm brown ramp with fire, danger and gold accents."><figcaption class="cap"><b>Dagger</b>One warm ramp, with fire, danger and gold as accent ramps. Closest to Devil Daggers.</figcaption></figure>
-      <figure><img class="px frame" src="shots/hallway.sincity.png" width="480" height="270" alt="Corridor in the Sin City style: black and white hatching with red accents."><figcaption class="cap"><b>Sin City</b>Paper, ink, three hatch densities and one accent.</figcaption></figure>
+      <figure><img class="px frame" src="shots/hallway.png" width="640" height="360" alt="Corridor in the Dagger style: one warm ramp with fire, danger, gold and turquoise accents."><figcaption class="cap"><b class="pick">Dagger · default</b>One warm ramp; fire, danger, reward and lit signs keep their colour.</figcaption></figure>
+      <figure><img class="px frame" src="shots/hallway.pigment.png" width="640" height="360" alt="Corridor in the Pigment style: full colour, dithered."><figcaption class="cap"><b>Pigment</b>Full colour through 36 inks. Red ochre paint, lapis, turquoise.</figcaption></figure>
+      <figure><img class="px frame" src="shots/hallway.sincity.png" width="640" height="360" alt="Corridor in the Sin City style: black and white hatching with red accents."><figcaption class="cap"><b>Sin City</b>Paper, ink, three hatch densities and one accent.</figcaption></figure>
     </div>
     <div class="trio">
-      <figure><img class="px frame" src="shots/hall.png" width="480" height="270" alt="Hypostyle hall in Pigment style."><figcaption class="cap">Hypostyle · Pigment</figcaption></figure>
-      <figure><img class="px frame" src="shots/hall.dagger.png" width="480" height="270" alt="Hypostyle hall in Dagger style."><figcaption class="cap">Hypostyle · Dagger</figcaption></figure>
-      <figure><img class="px frame" src="shots/hall.sincity.png" width="480" height="270" alt="Hypostyle hall in Sin City style."><figcaption class="cap">Hypostyle · Sin City</figcaption></figure>
+      <figure><img class="px frame" src="shots/hall.png" width="640" height="360" alt="Hypostyle hall in Dagger style."><figcaption class="cap">Hypostyle · Dagger</figcaption></figure>
+      <figure><img class="px frame" src="shots/hall.pigment.png" width="640" height="360" alt="Hypostyle hall in Pigment style."><figcaption class="cap">Hypostyle · Pigment</figcaption></figure>
+      <figure><img class="px frame" src="shots/hall.sincity.png" width="640" height="360" alt="Hypostyle hall in Sin City style."><figcaption class="cap">Hypostyle · Sin City</figcaption></figure>
     </div>
   </section>
 
@@ -337,33 +353,32 @@
   <section class="depth" aria-labelledby="next">
     <header>
       <div class="eyebrow">Next</div>
-      <h2 id="next">The first playable</h2>
+      <h2 id="next">Decided, and what comes after Depth I</h2>
     </header>
-    <ol class="next">
-      <li>Depth I as a real level: corridors and two rooms from an ASCII map, the torch light pool, the Pigment pass.</li>
-      <li>Movement and the twin 1911s: mouse and keyboard, gamepad and touch, per-gun fire and reload, the muzzle flash as a light. Then the trench gun and grenades.</li>
-      <li>The Wrapped, scarab swarms and the ba, each with a pure-sim AI and a headless check.</li>
-      <li>The Well and the scarab door, loading Depth II, where the bazooka turns up. The Staff of Ra waits at Depth III.</li>
-    </ol>
     <div class="ask">
-      <h3>Before the build</h3>
+      <h3>Decided</h3>
       <ul>
-        <li>Is Pigment the look, or should Dagger's near-mono lead?</li>
-        <li>270 lines like these shots, or a sharper 360?</li>
-        <li>Is a lone 1930s expedition the right hero for the twin 1911s, or a modern operator?</li>
-        <li>Should the Staff of Ra stay a late relic, as drawn, or be in hand from the start?</li>
+        <li>The look is Dagger, at a sharper 360 lines, with a Brightness setting in the game.</li>
+        <li>The hero is a 1980s soldier with his own 1911s and 870. The bazooka and Mk 2 grenades are 1940s finds in the pyramid.</li>
+        <li>The Staff of Ra is a relic found at Depth III.</li>
       </ul>
     </div>
+    <ol class="next">
+      <li>Depth II, Hypostyle of Night: Jackal Wardens, the Canopic Mother and her ba, and the bazooka.</li>
+      <li>Depth III, The Well: the spiral shaft, ba diving on the steps, the Staff of Ra.</li>
+      <li>Depth IV, Hall of Two Truths: Ammit and the Scales of Ma'at.</li>
+      <li>Secrets behind the wedjat eye, a run timer leaderboard, music.</li>
+    </ol>
   </section>
 
-  <footer>Rendered by <code>tools/render-concepts.mjs</code> from <code>concept/?shot=…&amp;style=…</code> in the hell-hole repo. Every image is a 480 × 270 or 216 × 270 frame from the engine, scaled with hard pixels.</footer>
+  <footer>Rendered by <code>tools/render-concepts.mjs</code> from <code>concept/?shot=…&amp;style=…</code> in the hell-hole repo. Every concept image is a 640 × 360 or 288 × 360 frame from the engine, scaled with hard pixels; the play frames are from the game itself.</footer>
 </div>
 
 <script>
-  // The palette, straight from js/render/dread.js (PIGMENTS).
-  const PIGMENTS = ['#000000', '#0c0705', '#1a0f09', '#2a1910', '#3e2516', '#5a3720', '#7c4f2c', '#a06c3c', '#c49258', '#e0b87e', '#f4e2b8',
-    '#2e0a06', '#5e160c', '#9a2c16', '#cc4a24', '#7a0612', '#d8142a', '#080c1e', '#121c44', '#1e3478', '#3460b0', '#6a92d8',
-    '#06201a', '#0e3e32', '#1e6e58', '#38a888', '#2ab894', '#46e0bc', '#8af0d8', '#5a8ce8', '#e86a10', '#ffa020', '#ffd048', '#fff4c0', '#262230', '#4a4458'];
+  // The Dagger ramps, straight from js/render/dread.js (STYLES.dagger).
+  const PIGMENTS = ['#000000', '#140806', '#3a1a10', '#74401f', '#c08a4a', '#f2dcae',
+    '#5a1004', '#c8380a', '#ff8c1a', '#fff0b0', '#3c0008', '#8e0614', '#ff1e32', '#ffd2c8',
+    '#3a2a06', '#9a6c10', '#ffc838', '#fff6c8', '#06201a', '#1e6e58', '#46e0bc', '#c8fff0'];
   const box = document.getElementById('swatches');
   for (const hex of PIGMENTS) {
     const d = document.createElement('div');

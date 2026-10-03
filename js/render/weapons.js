@@ -5,23 +5,27 @@ import * as TX from './textures.js';
 import { m1911, hand, muzzleFlash } from './guns.js';
 import { limb } from './monsters.js';
 
-// The arsenal past the twin 1911s, built 1:1 in metres from primitives, barrel along -z:
-//   trench gun  — a Model 1897-pattern pump shotgun: exposed hammer, perforated heat shield
-//   bazooka     — an M1-pattern rocket tube: shoulder stock, two grips, a ring sight
-//   Mk 2        — the pineapple grenade: cast segments, spoon and ring pin
+// The arsenal past the twin 1911s, built 1:1 in metres from primitives, barrel along -z.
+// The hero is a 1980s soldier: the M1911A1s and the Remington 870 are his own kit. The bazooka
+// and the Mk 2 grenades are finds, left in the pyramid by a 1940s expedition that never came
+// out. The Staff of Ra is older than all of them.
+//   870         — a Remington 870 pump: walnut stock and ribbed forend, bead sight
+//   trench gun  — a Model 1897-pattern pump (kept for reference; the 870 replaced it)
+//   bazooka     — an M1-pattern rocket tube: shoulder stock, two grips, a ring sight (found)
+//   Mk 2        — the pineapple grenade: cast segments, spoon and ring pin (found)
 //   Staff of Ra — a relic: a gold and lapis staff crowned by a falcon head and the sun disk,
 //                 which throws a beam of sunlight (the only white light in the underworld)
 // Explosions, smoke and the beam are camera-facing cards and fog-free glow, like the torches.
 
-const blued = () => mat('blued', () => standard(0x4a4e58, { metalness: 0.5, roughness: 0.5 }));
+const blued = () => mat('blued', () => standard(0x70747e, { metalness: 0.35, roughness: 0.5 }));
 const dark = () => mat('dark', () => lambert(0x000000));
 const walnut = () => mat('stockWood', () => lambert(0x7a4422, { map: textures().rough }));
 const olive = () => mat('olive', () => standard(0x4e5a2e, { roughness: 0.7 }));
 const gold = () => mat('gold', () => standard(0xffc030, { metalness: 0.85, roughness: 0.35, emissive: 0x2a1800 }));
 const lapis = () => mat('lapis', () => lambert(0x2e56a8));
-const glove = () => mat('glove', () => lambert(0x3a2a1e));
+const glove = () => mat('glove', () => lambert(0x1e1a18));
 const skin = () => mat('skin', () => lambert(0xa87a5a));
-const sleeve = () => mat('sleeve', () => lambert(0x8a7a56, { map: textures().wraps }));
+const sleeve = () => mat('sleeve', () => lambert(0xffffff, { map: textures().woodland }));
 
 const UP = new THREE.Vector3(0, 1, 0);
 // A gloved fist at p with the forearm running back along dir (unit, local space) out of frame.
@@ -58,6 +62,27 @@ export function trenchGun() {
   st.add(mesh(new THREE.BoxGeometry(0.036, 0.045, 0.12), W, 0, 0, 0.06));
   st.add(mesh(new THREE.BoxGeometry(0.042, 0.12, 0.24), W, 0, -0.03, 0.22, { rx: -0.08 }));
   st.add(mesh(new THREE.BoxGeometry(0.044, 0.125, 0.012), B, 0, -0.035, 0.34, { rx: -0.08 }));
+  return g;
+}
+
+// ---- Remington 870 ---------------------------------------------------------------------
+export function remington870() {
+  const g = new THREE.Group(), B = blued(), W = walnut();
+  g.add(mesh(new THREE.BoxGeometry(0.042, 0.064, 0.22), B, 0, 0.02, -0.03));                    // receiver
+  g.add(mesh(new THREE.BoxGeometry(0.044, 0.016, 0.07), dark(), 0.0, 0.03, -0.04));             // ejection port (right)
+  g.add(limb([0, 0.042, -0.14], [0, 0.042, -0.6], 0.0115, 0.0115, B, 8));                       // 18.5 in barrel
+  g.add(mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.012, 8), dark(), 0, 0.042, -0.604, { rx: Math.PI / 2 }));
+  g.add(mesh(new THREE.SphereGeometry(0.004, 5, 4), mat('brass', () => standard(0xc8a050, { metalness: 0.9, roughness: 0.3 })), 0, 0.056, -0.59)); // bead sight
+  g.add(limb([0, 0.01, -0.14], [0, 0.01, -0.52], 0.012, 0.012, B, 8));                          // magazine tube
+  g.add(mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.02, 8), B, 0, 0.01, -0.525, { rx: Math.PI / 2 })); // magazine cap
+  g.add(mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.16, 10), W, 0, 0.012, -0.29, { rx: Math.PI / 2 })); // forend
+  for (let k = 0; k < 7; k++) g.add(mesh(new THREE.TorusGeometry(0.026, 0.0028, 4, 10), mat('dkwood', () => lambert(0x3a2010)), 0, 0.012, -0.225 - k * 0.022));
+  g.add(mesh(new THREE.BoxGeometry(0.01, 0.006, 0.06), B, 0, -0.026, 0.02));                     // trigger guard
+  g.add(mesh(new THREE.BoxGeometry(0.006, 0.02, 0.006), B, 0, -0.016, 0.01));
+  const st = new THREE.Group(); st.position.set(0, 0.0, 0.08); st.rotation.x = -0.12; g.add(st);
+  st.add(mesh(new THREE.BoxGeometry(0.036, 0.05, 0.12), W, 0, -0.005, 0.06));
+  st.add(mesh(new THREE.BoxGeometry(0.042, 0.12, 0.25), W, 0, -0.035, 0.22, { rx: -0.06 }));
+  st.add(mesh(new THREE.BoxGeometry(0.044, 0.125, 0.014), mat('pad', () => lambert(0x141210)), 0, -0.04, 0.35, { rx: -0.06 }));  // recoil pad
   return g;
 }
 
@@ -184,12 +209,18 @@ export function sunBeam(root, cam, a, b, seed = 1) {
 export function viewTrench(cam, { fire = true } = {}) {
   const root = new THREE.Group(); cam.add(root);
   const g = new THREE.Group(); g.position.set(0.17, -0.21, -0.3); g.rotation.set(fire ? 0.1 : 0.05, 0.1, -0.1); root.add(g);
-  g.add(trenchGun());
+  g.add(remington870());
   fist(g, [0.0, -0.035, 0.1], [0.12, -0.45, 0.85]);      // right hand on the wrist
-  fist(g, [-0.004, -0.008, -0.27], [-0.35, -0.5, 0.75]); // left hand on the pump
-  if (fire) { const f = muzzleFlash(2); f.scale.setScalar(1.8); f.position.set(0, 0.045, -0.68); g.add(f); }
+  fist(g, [-0.004, -0.008, -0.29], [-0.35, -0.5, 0.75]); // left hand on the pump
+  if (fire) { const f = muzzleFlash(2); f.scale.setScalar(1.8); f.position.set(0, 0.042, -0.62); g.add(f); }
   const carry = new THREE.PointLight(0xffa060, 0.3, 1.4, 2); carry.position.set(0.05, 0.05, -0.3); root.add(carry);
   return root;
+}
+
+// The 870's two hands, for the game's viewmodel: right on the wrist, left on the pump.
+export function fistsFor870(g) {
+  fist(g, [0.0, -0.035, 0.1], [0.12, -0.45, 0.85]);
+  fist(g, [-0.004, -0.008, -0.29], [-0.35, -0.5, 0.75]);
 }
 
 export function viewBazooka(cam) {

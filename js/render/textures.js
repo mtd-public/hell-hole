@@ -339,3 +339,20 @@ export function pineapple({ size = 32 } = {}) {
   for (let k = 0; k < size; k += 6) { g.fillStyle = grey(40); g.fillRect(k, 0, 1, size); g.fillRect(0, k, size, 1); }
   return tex(c);
 }
+
+// M81 woodland: the 1980s BDU. Four-colour blobs (light green, field drab, forest green, black).
+export function woodland({ seed = 23, size = 64 } = {}) {
+  const r = rng(seed); const [c, g] = canvas(size, size);
+  g.fillStyle = '#6e7a4a'; g.fillRect(0, 0, size, size);
+  const blobs = (col, n, rmin, rmax) => {
+    g.fillStyle = col;
+    for (let k = 0; k < n; k++) {
+      const x = r() * size, y = r() * size, a = r() * 3;
+      for (const [dx, dy] of [[0, 0], [size, 0], [-size, 0], [0, size], [0, -size]]) {
+        g.beginPath(); g.ellipse(x + dx, y + dy, rmin + r() * (rmax - rmin), (rmin + r() * (rmax - rmin)) * 0.45, a, 0, 7); g.fill();
+      }
+    }
+  };
+  blobs('#5e4630', 9, 6, 13); blobs('#2e3e22', 10, 6, 14); blobs('#121410', 12, 2, 6);
+  return tex(c);
+}

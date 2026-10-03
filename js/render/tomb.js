@@ -30,7 +30,7 @@ export function textures() {
     wall: TX.stoneWall({ seed: 3 }), wallPlain: TX.stoneWall({ seed: 9, glyphs: false }), hallWall: TX.stoneWall({ seed: 21, lit: 0.22 }),
     floor: TX.floorStone({ seed: 7 }), rough: TX.roughStone({ seed: 11 }), column: TX.columnTex({ seed: 13 }),
     wraps: TX.wraps({ seed: 5 }), hide: TX.hide({ seed: 17 }), scales: TX.scales({}), checker: TX.checker({}),
-    frieze: TX.frieze({}), sky: TX.nightSky({}), feathers: TX.feathers({}),
+    frieze: TX.frieze({}), sky: TX.nightSky({}), feathers: TX.feathers({}), woodland: TX.woodland({}),
   };
   return TEX;
 }
@@ -111,8 +111,9 @@ export function wallTorch(root, x, y, z, nx, nz, o = {}) {
   stick.rotation.z = -nx * 0.35; stick.rotation.x = nz * 0.35; g.add(stick);
   g.add(mesh(new THREE.TorusGeometry(0.07, 0.015, 4, 8), iron, nx * 0.3, -0.12, nz * 0.3, { rx: Math.PI / 2 }));
   const f = flame(o.scale ?? 0.55, o.seed ?? (x * 13 + z * 7) | 0); f.position.set(nx * 0.38, 0.2, nz * 0.38); g.add(f);
-  const l = fireLight(PAL.fireLight, o.intensity ?? 1.8, o.distance ?? 6.5, o.shadow);
-  l.position.set(nx * 0.55, 0.45, nz * 0.55); g.add(l);
+  // the light: a real one in concept shots; in the game the light pool lends one (o.light false)
+  g.userData.lightAt = new THREE.Vector3(x + nx * 0.55, y + 0.45, z + nz * 0.55);
+  if (o.light !== false) { const l = fireLight(PAL.fireLight, o.intensity ?? 1.8, o.distance ?? 6.5, o.shadow); l.position.set(nx * 0.55, 0.45, nz * 0.55); g.add(l); }
   root.add(g);
   return g;
 }
@@ -135,8 +136,8 @@ export function brazier(root, x, z, o = {}) {
     const f = flame(1.6 * s * (k ? 0.7 : 1), (o.seed ?? 1) + k * 31);
     f.position.set(k ? Math.cos(k * 2.4) * 0.3 * s : 0, 1.5 * s, k ? Math.sin(k * 2.4) * 0.3 * s : 0); g.add(f);
   }
-  const l = fireLight(PAL.braziLight, o.intensity ?? 30, o.distance ?? 20, o.shadow);
-  l.position.set(0, 2.6 * s, 0); g.add(l);
+  g.userData.lightAt = new THREE.Vector3(x, (o.y ?? 0) + 2.6 * s, z);
+  if (o.light !== false) { const l = fireLight(PAL.braziLight, o.intensity ?? 30, o.distance ?? 20, o.shadow); l.position.set(0, 2.6 * s, 0); g.add(l); }
   root.add(g);
   return g;
 }
@@ -277,7 +278,7 @@ export function doorway(root, x, z, w = 3, h = 3.6, o = {}) {
   // a lit sign carved into a jamb: the scarab (Khepri, the sun that goes under the world)
   // marks the way down
   if (o.sign !== undefined) {
-    const sm = mat('sign' + o.sign, () => new THREE.MeshBasicMaterial({ map: TX.signTex(o.sign, o.signColor), alphaTest: 0.5, fog: false }));
+    const sm = mat('sign' + o.sign, () => role(new THREE.MeshBasicMaterial({ map: TX.signTex(o.sign, o.signColor), alphaTest: 0.5, fog: false }), 'glyph'));
     for (const s of [-1, 1]) g.add(mesh(new THREE.PlaneGeometry(0.9, 0.9), sm, s * (w / 2 + 0.6), h * 0.62, 0.61, { cast: false }));
   }
   root.add(g);
@@ -326,4 +327,32 @@ export function rubble(root, x, z, seed = 1, n = 8, spread = 1.5) {
     const s = 0.12 + r() * 0.35;
     root.add(mesh(new THREE.DodecahedronGeometry(s, 0), m, x + (r() - 0.5) * spread, s * 0.5, z + (r() - 0.5) * spread, { ry: r() * 6, rx: r() * 6 }));
   }
+}
+
+export { role };
+
+// Bake a built group into one mesh per material (geometry merged in the group's own frame).
+// Monsters are dozens of primitives; baked, a mummy is five draw calls instead of fifty.
+export function bake(group, mergeGeometries) {
+  group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
+  const byMat = new Map();
+  group.traverse((o) => {
+    if (!o.isMesh) return;
+    let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+    if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    if (!g.attributes.normal) g.computeVertexNormals();
+    g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+    const m = o.material;
+    if (!byMat.has(m)) byMat.set(m, []);
+    byMat.get(m).push(g);
+  });
+  const out = new THREE.Group();
+  for (const [m, list] of byMat) {
+    const me = new THREE.Mesh(mergeGeometries(list, false), m);
+    me.castShadow = !m.isMeshBasicMaterial; me.receiveShadow = !m.isMeshBasicMaterial;
+    out.add(me);
+  }
+  return out;
 }

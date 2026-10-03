@@ -1,0 +1,8 @@
+{
+  "name": "hell-hole",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node tools/sim-check.mjs"
+  }
+}

@@ -10,7 +10,9 @@
   torch light pool), [Vertical-Vantage](https://github.com/mtd-public/Vertical-Vantage)
   (first-person core, Egypt tomb kit), [dr-mow](https://github.com/mtd-public/dr-mow) (PS1
   retro pipeline, synth audio)
-- **Stage:** design note and concept art. No game loop yet.
+- **Stage:** Depth I playable ([play](https://claude.ai/artifact/LgwBE6F1kzjzdbSh2d6EX7)).
+- **Decided:** Dagger look at 360 lines; a 1980s soldier; the bazooka and Mk 2 grenades are 1940s
+  finds in the pyramid; the Staff of Ra is found at Depth III.
 
 ## 1. Pillars
 
@@ -27,29 +29,34 @@
 
 | Setting | Value | Why |
 |---|---|---|
-| Internal resolution | 270 lines (480 × 270 at 16:9), hard-pixel upscale | Devil Daggers / PS1 chunk; dr-mow ships 240 |
-| Default style | **Pigment**: full colour snapped to 36 inks with a 4×4 Bayer dither | Multi-colour (user direction), but every pixel is one ink |
-| Value curve | gamma 1.5 on luminance, hue kept | "Shrouded in darkness": mids fall to black |
+| Internal resolution | 360 lines (640 × 360 at 16:9), hard-pixel upscale; 270 and 540 in settings | Sharper than dr-mow's 240, still chunky |
+| Default style | **Dagger**: one warm ramp (black → bone) with a 4×4 Bayer dither; fire, crimson, gold and turquoise-sign accent ramps | Devil Daggers' near-mono: only the colour that means something survives |
+| Alternate | **Pigment**: full colour snapped to 36 Egyptian inks | Kept in settings |
+| Brightness | exposure 1.8 by default (settings 0.8–3) | Lifts lit stone without lifting black |
 | Ink edges | depth edges in the opposite tone; dark-side rims fade out by 18 m | Monsters arrive as outlines before they arrive lit (Sin City) |
-| Alternates | **Dagger** (near-mono warm ramp + 3 accent ramps), **Sin City** (two-tone ink + hatching) | Same materials, one uniform flips material roles |
-| Torch light | 1.8 cd, 6.5 m range, decay 2 | Pools of light with dark between |
-| Brazier light | 30 cd, 20 m range | Rooms are arenas lit from a few fires |
-| Glyph glow | only ankh, wedjat eye and scarab, ~30 % of those | A lit sign is rare, so it means something (§4) |
+| Sin City | two-tone ink + hatching | Same materials, one uniform flips material roles |
+| Torch light (game) | 10 cd, 10 m range, decay 2, from a pool of 8 real lights | Physical units: a pool about 4 m across, dark between |
+| Brazier light (game) | 110 cd, 24 m range | Rooms are arenas lit from a few fires |
+| Torch shadows | off by default (setting) | 256 px cube maps acne across whole rooms |
+| Glyph glow | in play, walls never glow; only placed signs (ankh over a shrine, scarab on the door) | A lit sign always means something (§4) |
 
 Flames are fog-free cards (three crossed, plus a top rosette and a white-hot core so they read
 from above). Shots that would vanish edge-on (fire, beams, blasts) are camera-facing cards.
 
 ## 3. Player and arsenal
 
-| Weapon | Ammo | Role | Light |
-|---|---|---|---|
-| Twin M1911A1 | .45 ACP, 7 + 1 each | Each trigger fires its own gun; alternate or fire both | Muzzle flash is a real light |
-| Trench gun (M1897 pattern) | 6 shells, 9 pellets | Close; slam-fire by holding trigger and pumping | Big flash |
-| Bazooka (M1 pattern) | 1 + 6 rockets | Splash; back-blast near walls | The rocket is a moving light |
-| Mk 2 grenades | carried | Cook, throw, bounce; left hand throws while the right keeps a 1911 | Blast lights the room red |
-| Staff of Ra (relic, Depth III) | stored sun | Beam that burns through a line | The only white light; recharge in a brazier |
+The hero is a **1980s soldier**: M81 woodland sleeves rolled, black fingerless gloves, a digital
+watch. His squad went in an hour ahead of him. The radio went quiet at the second chamber.
 
-All numbers above are proposals to tune in a `TUNING` table, each with its reason.
+| Weapon | Ammo | Role | Where | Light |
+|---|---|---|---|---|
+| Twin M1911A1 | .45 ACP, 7 + 1 each | Each trigger fires its own gun | his own | Muzzle flash is a real light |
+| Remington 870 | 7 in the tube, 9 pellets | Close; staggers, clears swarms | the squad's, found in Depth I | Big flash |
+| Bazooka (M1 pattern) | 1 + 6 rockets | Splash; back-blast near walls | found, 1940s expedition (Depth II) | The rocket is a moving light |
+| Mk 2 grenades | carried, max 6 | Throw, bounce, 2 s fuse | found, 1940s crate (Depth I) | Blast lights the room |
+| Staff of Ra (relic) | stored sun | Beam that burns through a line | Depth III | The only white light |
+
+Live numbers are in `js/sim/tuning.js`, each with its reason.
 
 ## 4. Glyph language
 
@@ -80,14 +87,30 @@ All numbers above are proposals to tune in a `TUNING` table, each with its reaso
 | III | The Well | Spiral stair round a burial shaft, ba on the steps; Staff of Ra |
 | IV | Hall of Two Truths | Ammit under the Scales of Ma'at |
 
-## 7. Open questions
+## 7. Depth I as built
 
-- Pigment as the look, or Dagger's near-mono?
-- 270 lines, or a sharper 360?
-- 1930s expedition hero, or a modern operator?
-- Staff of Ra as a late relic, or in hand from the start?
+`js/sim/levels.js`, 24 × 31 cells of 3 m: the start corridor (a mummy, ammo) → the antechamber
+(four columns, two braziers, three mummies) → the east corridor (a scarab nest) → the squad's last
+stand (bones in woodland, a helmet, the 870, shells) → north corridors (a mummy, a nest) → the hall
+of pillars (eight columns, four braziers, five mummies, two nests, an ankh shrine, a 1940s grenade
+crate) → the exit corridor → the scarab door. 42 sim checks prove it's finishable.
 
 ## Delta log
+
+### claude/trusting-babbage-3fhzep: Depth I playable
+
+- Decisions: Dagger default at 360 lines; 1980s soldier (woodland, fingerless gloves); the 870
+  is his own; bazooka and Mk 2 grenades are 1940s finds; Staff of Ra at Depth III.
+- `js/sim/`: pure rules: movement, twin-trigger 1911s with per-gun reloads, the 870 (shell-by-shell
+  reload), bouncing Mk 2 grenades, mummies (path field, windup, heart-scarab one-shot), scarab
+  nests and swarms, pickups, ankh shrine, exit. `tools/sim-check.mjs` (42 checks).
+- `js/render/`: level geometry from the map, the torch light pool (8 lights), baked mummies,
+  instanced scarabs, particles and explosions, the viewmodel; the Dagger ramp gained a turquoise
+  glyph accent and a Brightness exposure.
+- `js/input`, `js/audio`, `js/ui`, `index.html`, `css/`: pointer lock + gamepad + touch, synth
+  sound set, HUD, title / pause / settings / end screens.
+- Verified: sim checks 42/42; `tools/smoke.mjs` on desktop and phone (0 console errors, no page
+  scroll, firing, pause, the door ends the depth).
 
 ### claude/trusting-babbage-3fhzep: concept art (no game loop yet)
 

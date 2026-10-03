@@ -1,0 +1,51 @@
+name: Check and deploy
+
+# House rule (mstr-gme-dsgn-tmpt): check on every branch, deploy to GitHub Pages only from main.
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Sim checks (maps finishable, weapons, monsters, pickups)
+        run: node tools/sim-check.mjs
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: check
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Ship only what the game loads (and the concept pages); skip tools and docs.
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp -r index.html css js touch-zoom-guard concept _site/
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Hell Hole</title>
+<meta name="description" content="A torch-lit tomb shooter: twin 1911s, Devil Daggers darkness, every level further down.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%23000%22/%3E%3Cellipse cx=%2216%22 cy=%229%22 rx=%225%22 ry=%226%22 fill=%22none%22 stroke=%22%23ff8c1a%22 stroke-width=%223%22/%3E%3Cpath d=%22M16 15v15M7 16h18%22 stroke=%22%23ff8c1a%22 stroke-width=%223%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus+SC&family=VT323&display=swap">
+<link rel="stylesheet" href="touch-zoom-guard/touch-zoom-guard.css">
+<link rel="stylesheet" href="css/style.css">
+<script src="touch-zoom-guard/touch-zoom-guard.js"></script>
+<script type="importmap">{ "imports": { "three": "./js/vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="view"></canvas>
+
+  <div id="touch" hidden>
+    <div id="t-zone" data-touch-control></div>
+    <div id="t-stick" aria-hidden="true"><div id="t-knob"></div></div>
+    <button id="t-fire-l" class="tbtn fire">L</button>
+    <button id="t-fire-r" class="tbtn fire">R</button>
+    <button id="t-jump" class="tbtn small">JUMP</button>
+    <button id="t-reload" class="tbtn small">RELOAD</button>
+    <button id="t-grenade" class="tbtn small">GREN</button>
+    <button id="t-swap" class="tbtn small">SWAP</button>
+    <button id="t-pause" class="tbtn pause" aria-label="Pause">II</button>
+  </div>
+
+  <div id="hud" hidden>
+    <div class="hud-top">
+      <span id="h-depth">DEPTH I</span>
+      <span id="h-time">0.0</span>
+      <span class="kills"><span id="h-kills">0</span> SLAIN</span>
+    </div>
+    <div id="h-xhair"></div>
+    <div class="hud-bl">
+      <svg class="ankh" viewBox="0 0 32 32" aria-hidden="true"><ellipse cx="16" cy="8" rx="5" ry="6"/><path d="M16 14v16M7 15h18"/></svg>
+      <span id="h-hp">100</span>
+      <span class="bar"><span id="h-hpbar"></span></span>
+    </div>
+    <div class="hud-br">
+      <div id="h-weapon">M1911A1 ×2</div>
+      <div class="pips-row"><span id="h-pips-l" class="pips"></span><span id="h-pips-r" class="pips"></span></div>
+      <div id="h-reserve"></div>
+      <div id="h-gren"></div>
+    </div>
+    <div id="h-toast"></div>
+    <div id="h-vignette"></div>
+    <div id="h-heal"></div>
+  </div>
+
+  <section id="s-title" class="screen" data-touch-allow>
+    <div class="card">
+      <div class="eyebrow">Depth I · The Descending Corridor</div>
+      <h1>Hell <span>Hole</span></h1>
+      <p class="blurb">Your squad went in an hour ahead of you. The radio went quiet at the second chamber. Find the scarab door and go down.</p>
+      <button id="b-start" class="primary">Descend</button>
+      <div class="row">
+        <button id="b-settings">Settings</button>
+        <button id="b-mute">Sound: on</button>
+      </div>
+      <table class="controls">
+        <tr><td>Move · jump</td><td>WASD · Space</td><td>Left stick · A</td></tr>
+        <tr><td>Right gun · left gun</td><td>Left click · right click</td><td>RT · LT</td></tr>
+        <tr><td>Reload · grenade</td><td>R · G</td><td>X · B</td></tr>
+        <tr><td>Swap weapon</td><td>Q · wheel · 1 / 2</td><td>Y</td></tr>
+        <tr><td>Pause</td><td>Esc · P</td><td>Menu</td></tr>
+      </table>
+      <p class="hint">Each trigger fires its own 1911. The heart scarab in a mummy's chest kills it in one shot.</p>
+    </div>
+  </section>
+
+  <section id="s-settings" class="screen" hidden data-touch-allow>
+    <div class="card">
+      <h2>Settings</h2>
+      <label>Look <select id="o-style"><option value="dagger">Dagger</option><option value="pigment">Pigment</option><option value="sincity">Sin City</option></select></label>
+      <label>Resolution <select id="o-lines"><option value="270">270 lines</option><option value="360">360 lines</option><option value="540">540 lines</option></select></label>
+      <label>Brightness <input id="o-bright" type="range" min="0.8" max="3" step="0.05"></label>
+      <label>Mouse sensitivity <input id="o-sens" type="range" min="0.3" max="2.5" step="0.05"></label>
+      <label class="check"><input id="o-invert" type="checkbox"> Invert look</label>
+      <label class="check"><input id="o-shadows" type="checkbox"> Torch shadows</label>
+      <button id="b-settings-done" class="primary">Done</button>
+    </div>
+  </section>
+
+  <section id="s-pause" class="screen" hidden data-touch-allow>
+    <div class="card">
+      <h2>Paused</h2>
+      <button id="b-resume" class="primary">Resume</button>
+      <div class="row"><button id="b-pause-settings">Settings</button><button id="b-restart">Restart depth</button></div>
+    </div>
+  </section>
+
+  <section id="s-end" class="screen" hidden data-touch-allow>
+    <div class="card">
+      <div class="eyebrow" id="e-eyebrow">Depth I</div>
+      <h2 id="e-title">You died</h2>
+      <p class="blurb" id="e-blurb"></p>
+      <dl class="stats" id="e-stats"></dl>
+      <button id="b-again" class="primary">Try again</button>
+    </div>
+  </section>
+
+  <div class="tzg-hint">Pinch out to reset zoom</div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

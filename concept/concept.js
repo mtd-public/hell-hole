@@ -12,8 +12,8 @@ import * as W from '../js/render/weapons.js';
 
 const Q = new URLSearchParams(location.search);
 const SHOT = Q.get('shot');
-const STYLE = STYLES[Q.get('style')] || STYLES.pigment;
-const LINES = +(Q.get('h') || 270);
+const STYLE = STYLES[Q.get('style')] || STYLES.dagger;
+const LINES = +(Q.get('h') || 360);
 
 const SHOTS = {
   hallway: { title: 'The Descending Corridor', aspect: 16 / 9, build: hallway },
@@ -22,7 +22,7 @@ const SHOTS = {
   boss: { title: 'Hall of Two Truths: Ammit', aspect: 16 / 9, build: boss },
   guns: { title: 'Twin 1911s', aspect: 16 / 9, build: guns },
   gunlab: { title: 'gun lab', aspect: 16 / 9, build: gunlab },
-  shotgun: { title: 'Trench Gun', aspect: 16 / 9, build: shotgunShot },
+  shotgun: { title: 'Remington 870', aspect: 16 / 9, build: shotgunShot },
   rocket: { title: 'Bazooka', aspect: 16 / 9, build: rocketShot },
   grenade: { title: 'Mk 2 Grenades', aspect: 16 / 9, build: grenadeShot },
   staff: { title: 'Staff of Ra', aspect: 16 / 9, build: staffShot },
@@ -179,7 +179,7 @@ function arsenal(scene, cam) {
   const lay = (o, x, z, ry, s = 1, y = 0.93) => { o.position.set(x, y, z); o.rotation.set(-Math.PI / 2 * 0, ry, 0); o.scale.setScalar(s); scene.add(o); return o; };
   const side = (o) => { o.rotation.z = Math.PI / 2; return o; };
   // weapons lie on their sides, barrels to the right
-  const tg = side(lay(W.trenchGun(), -0.1, -0.45, -Math.PI / 2)); tg.position.y = 0.96;
+  const tg = side(lay(W.remington870(), -0.1, -0.45, -Math.PI / 2)); tg.position.y = 0.96;
   const bz = side(lay(W.bazooka(), 0.05, -0.12, -Math.PI / 2 + 0.04)); bz.position.y = 0.98;
   const st1 = lay(W.staffOfRa(), 0.0, 0.18, -Math.PI / 2 - 0.05); st1.position.y = 0.955;
   const p1 = side(lay(m1911(), -0.7, 0.45, -Math.PI / 2 + 0.3)); p1.position.y = 0.947;
@@ -188,7 +188,7 @@ function arsenal(scene, cam) {
   for (let k = 0; k < 6; k++) { const c = K.mesh(new THREE.CylinderGeometry(0.0095, 0.0095, 0.06, 8), K.mat('shell', () => K.standard(0xb03020, { roughness: 0.6 })), 0.55 + k * 0.03, 0.942, 0.5 + (k % 2) * 0.02, { rz: Math.PI / 2, ry: 0.4 }); scene.add(c); }
   K.wallTorch(scene, -1.7, 2.0, -1.6, 0, 1, { seed: 3, intensity: 3.2, shadow: true });
   K.wallTorch(scene, 1.7, 2.0, -1.6, 0, 1, { seed: 8, intensity: 3.2, shadow: true });
-  const sign = K.mesh(new THREE.PlaneGeometry(0.7, 0.7), K.mat('sign0', () => new THREE.MeshBasicMaterial({ map: TX.signTex(0, '#46e0bc'), alphaTest: 0.5, fog: false })), 0, 2.2, -1.58, { cast: false });
+  const sign = K.mesh(new THREE.PlaneGeometry(0.7, 0.7), K.mat('sign0', () => K.role(new THREE.MeshBasicMaterial({ map: TX.signTex(0, '#46e0bc'), alphaTest: 0.5, fog: false }), 'glyph')), 0, 2.2, -1.58, { cast: false });
   scene.add(sign);
   K.brazier(scene, -2.2, 0.6, { scale: 0.9, intensity: 26, distance: 12, shadow: true });
   const fill = K.fireLight(0xffb070, 3, 4, false); fill.position.set(0.9, 1.9, 1.2); scene.add(fill);

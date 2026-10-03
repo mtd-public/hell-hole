@@ -6,7 +6,7 @@ import { role } from './dread.js';
 // 135 mm tall), barrel along -z, origin at the trigger. The left gun is the right one
 // mirrored (three.js flips the winding for a negative scale).
 
-function blued() { return mat('blued', () => standard(0x4a4e58, { metalness: 0.5, roughness: 0.5 })); }
+function blued() { return mat('blued', () => standard(0x70747e, { metalness: 0.35, roughness: 0.5 })); }
 function dark() { return mat('dark', () => lambert(0x000000)); }
 
 export function m1911() {
@@ -40,10 +40,11 @@ export function m1911() {
   return g;
 }
 
-// A gloved hand round the grip and a sleeved forearm running back out of frame.
+// A hand round the grip and a forearm running back out of frame. The hero is a 1980s soldier:
+// black leather fingerless gloves, M81 woodland sleeves rolled to the elbow, a digital watch.
 export function hand(side) {
   const g = new THREE.Group();
-  const glove = mat('glove', () => lambert(0x3a2a1e)), sleeve = mat('sleeve', () => lambert(0x8a7a56, { map: textures().wraps }));
+  const glove = mat('glove', () => lambert(0x1e1a18)), sleeve = mat('sleeve', () => lambert(0xffffff, { map: textures().woodland }));
   const skin = mat('skin', () => lambert(0xa87a5a));
   const H = new THREE.Group(); H.position.set(0, -0.006, 0.026); H.rotation.x = -0.31; g.add(H);
   H.add(mesh(new THREE.BoxGeometry(0.03, 0.08, 0.034), glove, 0.012, -0.05, 0.03));            // palm on the back strap, right side
@@ -62,7 +63,7 @@ export function hand(side) {
   along(0.07, 0.034, 0.03, glove, -0.02);  // glove cuff
   along(0.26, 0.042, 0.034, skin, 0.04);   // forearm
   along(0.16, 0.055, 0.05, sleeve, 0.28);  // rolled sleeve
-  const watch = mesh(new THREE.TorusGeometry(0.036, 0.008, 4, 8), mat('watch', () => standard(0x9a8a6a, { metalness: 0.8, roughness: 0.4 })), 0, 0, 0);
+  const watch = mesh(new THREE.TorusGeometry(0.036, 0.009, 4, 8), mat('watch', () => standard(0x1a1a1a, { metalness: 0.2, roughness: 0.6 })), 0, 0, 0);
   watch.position.copy(dir).multiplyScalar(0.07); watch.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir); wrist.add(watch);
   void side;
   return g;
