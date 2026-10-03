@@ -223,6 +223,12 @@ export function fistsFor870(g) {
   fist(g, [-0.004, -0.008, -0.29], [-0.35, -0.5, 0.75]);
 }
 
+// The bazooka's two hands, for the game's viewmodel: the pistol grip and the front grip.
+export function fistsForBazooka(g) {
+  fist(g, [0.0, -0.11, -0.05], [0.1, -0.5, 0.85]);
+  fist(g, [0.0, -0.1, -0.4], [-0.45, -0.45, 0.75]);
+}
+
 export function viewBazooka(cam) {
   const root = new THREE.Group(); cam.add(root);
   const g = new THREE.Group(); g.position.set(0.3, -0.15, -0.1); g.rotation.set(0.03, 0.1, -0.04); root.add(g);

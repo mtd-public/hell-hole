@@ -64,9 +64,10 @@ h2 { font-size: clamp(34px, 6vw, 52px); }
 .hint { margin: 0; color: var(--ochre); font-size: 18px; max-width: 46ch; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 button { font: 22px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--bone); background: transparent; border: 1px solid var(--seam); padding: 10px 16px; cursor: pointer; touch-action: manipulation; }
-button:hover, button:focus-visible { border-color: var(--ochre); outline: none; }
+button:hover, button:focus-visible, button.pad-focus { border-color: var(--ochre); outline: none; }
+.pad-focus { outline: 2px solid var(--fire) !important; outline-offset: 3px; }
 button.primary { font-size: 30px; color: #000; background: var(--fire); border-color: var(--fire); padding: 12px 34px; }
-button.primary:hover, button.primary:focus-visible { background: var(--bone); border-color: var(--bone); }
+button.primary:hover, button.primary:focus-visible, button.primary.pad-focus { background: var(--bone); border-color: var(--bone); }
 table.controls { border-collapse: collapse; font-size: 18px; color: var(--ochre); width: 100%; }
 table.controls td { padding: 3px 8px; border-top: 1px solid var(--seam); text-align: left; }
 table.controls td:first-child { color: var(--bone); }

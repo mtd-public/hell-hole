@@ -1,6 +1,7 @@
 // Headless checks of the pure rules: node tools/sim-check.mjs
 // Proves the maps are finishable and the core numbers do what TUNING says they do.
-import { createWorld, step } from '../js/sim/world.js';
+import { createWorld, step, loadout } from '../js/sim/world.js';
+import { spawn } from '../js/sim/enemies.js';
 import { DEPTHS } from '../js/sim/levels.js';
 import { parseLevel, pathField, isWall } from '../js/sim/level.js';
 import { TUNING as T } from '../js/sim/tuning.js';
@@ -161,6 +162,136 @@ function duel(dist, aimAt) {
   const w = createWorld(0);
   step(w, idle(), 0); step(w, idle(), 1e-6);
   ok(Number.isFinite(w.player.x) && Number.isFinite(w.player.z), 'zero dt is safe');
+}
+
+
+// ---------------------------------------------------------------------------- Depth II
+const clear = (w) => { w.enemies = []; w.scarabs = []; w.nests = []; return w; };
+const autopilot = (w, secs = 120) => {
+  const L = w.L, p = w.player, target = pathField(L, L.exit.x, L.exit.z);
+  run(w, secs, () => {
+    const i = Math.floor(p.x / C), j = Math.floor(p.z / C), here = target[j * L.w + i];
+    let bx = p.x, bz = p.z, best = here;
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const d = target[(j + dj) * L.w + i + di];
+      if (d >= 0 && d < best) { best = d; bx = (i + di + 0.5) * C; bz = (j + dj + 0.5) * C; }
+    }
+    if (best === here) { bx = L.exit.x; bz = L.exit.z; }
+    const want = Math.atan2(-(bx - p.x), -(bz - p.z));
+    return { mx: 0, my: 1, yaw: Math.atan2(Math.sin(want - p.yaw), Math.cos(want - p.yaw)), pitch: 0 };
+  });
+};
+
+// 12. Depth II is finishable, and its kit starts you with the 870
+{
+  const w = clear(createWorld(1));
+  ok(w.player.has.shotgun && w.player.sg.tube === 7, 'depth II kit: the 870 loaded');
+  autopilot(w);
+  ok(w.state === 'clear', `walked Depth II to the door (state ${w.state}, t ${w.t.toFixed(1)} s)`);
+}
+
+// A lone creature straight north of you at distance d, awake.
+function face(type, dist, extra = {}) {
+  const w = clear(createWorld(1));
+  const p = w.player;
+  const e = spawn(w, type, p.x, p.z - dist, { yaw: Math.PI, ...extra });
+  w.enemies.push(e);
+  return { w, e, p };
+}
+const shoot = (w, n, side = 'fireR', gap = 30) => { let k = 0; run(w, (n * gap + 5) / 120, () => { k++; return { ...idle(), [side]: k % gap === 1 }; }); };
+
+// 13. jackal: four rounds to the head, twelve to the body
+{
+  const { w, e, p } = face('jackal', 6, { state: 'stagger', t: 99 });
+  p.pitch = Math.atan2(T.jackal.headY - T.player.eye, 6 - 0.14);
+  // hold it in place: a stagger that never ends
+  let k = 0; run(w, 1.2, () => { k++; e.state = 'stagger'; e.t = 99; return { ...idle(), fireR: k % 30 === 1 }; });
+  ok(e.dead && e.how === 'head', `jackal head shots kill (hp ${e.hp}, heads ${w.stats.heads})`);
+  ok(w.stats.heads <= 4, `took ${w.stats.heads} head shots`);
+  const b = face('jackal', 6, { state: 'stagger', t: 99 });
+  b.p.pitch = Math.atan2(1.0 - T.player.eye, 6);
+  let n = 0; run(b.w, 4, () => { n++; b.e.state = 'stagger'; b.e.t = 99; return { ...idle(), fireR: n % 20 === 1, fireL: n % 20 === 11 }; });
+  ok(b.e.dead && b.w.stats.shots >= T.jackal.hp, `jackal body shots: ${b.w.stats.shots} to kill`);
+}
+
+// 14. jackal: crouches, lunges, slashes
+{
+  const { w, e, p } = face('jackal', 5.5, { state: 'chase' });
+  const seen = new Set();
+  run(w, 3, () => { seen.add(e.state); return idle(); });
+  ok(seen.has('crouch') && seen.has('lunge'), `jackal lunged (${[...seen].join(',')})`);
+  ok(p.hp <= T.player.hp - T.jackal.damage, `the khopesh lands (hp ${p.hp})`);
+}
+
+// 15. jackal: a point-blank load of buckshot staggers it
+{
+  const { w, e, p } = face('jackal', 2.2, { state: 'windup', t: 0.5 });
+  p.weapon = 'shotgun'; p.pitch = Math.atan2(1.2 - T.player.eye, 2.2);
+  let f = false; run(w, 0.05, () => { const c = { ...idle(), fireR: !f }; f = true; return c; });
+  ok(e.state === 'stagger', `buckshot staggers (state ${e.state}, hp ${e.hp})`);
+}
+
+// 16. ba: a flock wakes, orbits, dives; dives never start closer together than the global gap
+{
+  const w = clear(createWorld(1)), p = w.player;
+  for (let k = 0; k < 3; k++) { const b = spawn(w, 'ba', p.x + (k - 1), p.z - 6, { state: 'orbit', cd: 0.2 * k }); w.enemies.push(b); }
+  const dives = [];
+  run(w, 8, () => { for (const e of w.events) if (e.type === 'screech') dives.push(e.t); w.events.length = 0; return idle(); });
+  ok(dives.length >= 3, `ba dive (${dives.length} screeches in 8 s)`);
+  const gaps = dives.slice(1).map((t, k) => t - dives[k]);
+  ok(gaps.every((g) => g >= T.ba.globalGap - 1e-6), `dives spaced by ≥ ${T.ba.globalGap} s (${gaps.map((g) => g.toFixed(2)).join(' ')})`);
+  ok(p.hp < T.player.hp, `pecked (hp ${p.hp})`);
+}
+
+// 17. the Canopic Mother broods up to her limit, and her brood dies with her
+{
+  const { w, e, p } = face('mother', 9, { state: 'awake', t: 0.1 });
+  run(w, 25, () => { p.hp = 100; return idle(); });
+  const brood = w.enemies.filter((b) => b.type === 'ba' && b.mother === e.id && !b.dead).length;
+  ok(brood === T.mother.maxBrood, `mother broods ${brood}/${T.mother.maxBrood}`);
+  // the seam takes double
+  p.pitch = Math.atan2(e.y + (T.mother.seamY0 + T.mother.seamY1) / 2 - T.player.eye, 9 - T.mother.radius);
+  const hp0 = e.hp; let f = false; run(w, 0.02, () => { const c = { ...idle(), fireR: !f }; f = true; return c; });
+  ok(hp0 - e.hp === T.mother.seamMult, `seam shot takes ${hp0 - e.hp}`);
+  e.hp = 1; p.pitch = Math.atan2(e.y + 0.5 - T.player.eye, 9 - T.mother.radius);
+  let g = false; run(w, 0.05, () => { const c = { ...idle(), fireL: !g }; g = true; return c; });
+  const left = w.enemies.filter((b) => b.type === 'ba' && b.mother === e.id && !b.dead).length;
+  ok(e.dead && left === 0, `her brood dies with her (alive ${left})`);
+}
+
+// 18. the bazooka: pick it up, a rocket kills a pack, the tube reloads from the reserve
+{
+  const w = clear(createWorld(1)), p = w.player, bz = w.pickups.find((k) => k.kind === 'bazooka');
+  p.x = bz.x; p.z = bz.z; run(w, 0.1);
+  ok(p.has.bazooka && p.weapon === 'bazooka' && p.bz.tube === 1 && p.rockets === T.bazooka.found, `bazooka found (tube ${p.bz.tube}, rockets ${p.rockets})`);
+  // open floor: put the player in the hypostyle, a pack 9 m north
+  p.x = 15.5 * C; p.z = 15.5 * C; p.yaw = 0; p.pitch = Math.atan2(1.0 - T.player.eye, 9);
+  w.enemies = [-0.7, 0, 0.7].map((dx) => spawn(w, 'mummy', p.x + dx, p.z - 9, { state: 'windup', t: 99 }));
+  run(w, 0.4); let f = false;
+  run(w, 1.5, () => { const c = { ...idle(), fireR: !f }; f = true; return c; });
+  ok(w.enemies.every((e) => e.dead), `one rocket, three mummies (${w.enemies.map((e) => e.hp).join(' ')})`);
+  run(w, 2);
+  ok(p.bz.tube === 1 && p.rockets === T.bazooka.found - 1, `reloaded from the reserve (tube ${p.bz.tube}, rockets ${p.rockets})`);
+}
+
+// 19. back-blast: firing with your back to a wall hurts
+{
+  const w = clear(createWorld(1)), p = w.player;
+  p.has.bazooka = true; p.weapon = 'bazooka'; p.bz.tube = 1;
+  // the arrival corridor runs north; face north with the south end wall behind you
+  p.z = (33 + 1) * C - 0.5; p.yaw = 0; p.pitch = 0.2;
+  let f = false; run(w, 0.05, () => { const c = { ...idle(), fireR: !f }; f = true; return c; });
+  ok(p.hp === T.player.hp - T.bazooka.backDamage, `back-blast (hp ${p.hp})`);
+}
+
+// 20. descending keeps your kit
+{
+  const a = createWorld(0); const p = a.player;
+  p.reserve = 33; p.has.shotgun = true; p.sg.tube = 5; p.shells = 9; p.grenades = 3; p.hp = 20; p.weapon = 'shotgun';
+  const b = createWorld(1, { carry: loadout(a) });
+  const q = b.player;
+  ok(q.reserve === 33 && q.has.shotgun && q.sg.tube === 5 && q.shells === 9 && q.grenades === 3 && q.weapon === 'shotgun', 'loadout carried');
+  ok(q.hp === T.carry.minHp, `arrive with at least ${T.carry.minHp} hp (${q.hp})`);
 }
 
 console.log(`${passes} passed, ${fails} failed`);

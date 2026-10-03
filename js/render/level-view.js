@@ -21,6 +21,7 @@ export const LIGHTS = 8;
 const SRC = {
   torch: { color: K.PAL.fireLight, intensity: 10, distance: 10, weight: 1 },   // physical units: a torch lights about 4 m of wall
   brazier: { color: K.PAL.braziLight, intensity: 110, distance: 24, weight: 5 }, // and a brazier most of a room // a brazier outranks a nearer torch
+  lantern: { color: K.PAL.fireLight, intensity: 13, distance: 9, weight: 2 },    // the expedition's lantern: a small pool on the floor, enough to find the camp by
 };
 
 export class LevelView {
@@ -134,6 +135,7 @@ export class LevelView {
       const glint = new THREE.Mesh(new THREE.OctahedronGeometry(0.07, 0), K.mat('glint', () => K.glow(0xffd048, 'gold')));
       glint.position.y = 0.75; g.add(glint);
       if (p.kind === 'shotgun') fallenSoldier(R, p.x, p.z);
+      if (p.kind === 'bazooka') this.sources.push({ ...SRC.lantern, pos: expeditionCamp(R, p.x, p.z), phase: 1.7 });
       return { g, glint, body };
     });
     // set dressing: bones by the torches, urns along room walls, a sarcophagus in the big hall
@@ -183,6 +185,13 @@ function pickupModel(kind) {
     g.add(K.mesh(new THREE.BoxGeometry(0.6, 0.3, 0.4), wood, 0, 0.15, 0));
     g.add(K.mesh(new THREE.BoxGeometry(0.62, 0.03, 0.42), wood, 0.1, 0.33, 0.25, { ry: 0.5, rz: 0.2 }));
     for (let k = 0; k < 3; k++) { const gr = W.grenade(); gr.position.set(-0.15 + k * 0.15, 0.34, 0); gr.rotation.z = 0.3 * (k - 1); g.add(gr); }
+  } else if (kind === 'rockets') { // a 1940s crate of rockets, two left in the straw
+    const wood = K.mat('crate', () => K.lambert(0x7a5a34, { map: K.textures().rough }));
+    g.add(K.mesh(new THREE.BoxGeometry(0.75, 0.26, 0.36), wood, 0, 0.13, 0));
+    g.add(K.mesh(new THREE.BoxGeometry(0.7, 0.02, 0.3), K.mat('straw', () => K.lambert(0xc8a868)), 0, 0.25, 0, { cast: false }));
+    for (let k = 0; k < 2; k++) { const r = W.rocket(); r.rotation.y = Math.PI / 2; r.position.set(0, 0.3, -0.07 + k * 0.14); g.add(r); }
+  } else if (kind === 'bazooka') {
+    const b = W.bazooka(); b.rotation.set(0, 0.5, Math.PI / 2); b.position.y = 0.06; g.add(b);
   } else if (kind === 'shotgun') {
     const s = W.remington870(); s.rotation.set(0, 0.6, Math.PI / 2); s.position.y = 0.03; g.add(s);
   }
@@ -198,6 +207,37 @@ function fallenSoldier(R, x, z) {
   const helm = K.mesh(new THREE.SphereGeometry(0.15, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), K.mat('helm', () => K.lambert(0xffffff, { map: T.woodland, side: THREE.DoubleSide })), x + 0.2, 0.0, z + 0.7, { rx: 0.4 });
   R.add(helm);
   const p = m1911(); p.position.set(x - 0.4, 0.015, z + 0.5); p.rotation.set(0, 1.2, Math.PI / 2); R.add(p);
+}
+
+// Where the 1940s expedition made its last camp: crates, a pith helmet, a lantern, a canvas
+// pack, and what's left of whoever carried the bazooka down here. Returns where the lantern's
+// light sits, for the pool.
+function expeditionCamp(R, x, z) {
+  const T = K.textures();
+  const wood = K.mat('crate', () => K.lambert(0x7a5a34, { map: T.rough }));
+  const khaki = K.mat('khaki', () => K.lambert(0xb8a070, { map: T.wraps }));
+  for (const [dx, dz, s, ry] of [[0.9, -0.7, 0.55, 0.3], [1.2, -0.1, 0.45, -0.2], [0.95, -0.55, 0.38, 0.9]]) {
+    const y = dx === 0.95 ? 0.55 + s * 0.5 : s * 0.5;
+    R.add(K.mesh(new THREE.BoxGeometry(s * 1.4, s, s), wood, x + dx, y, z + dz, { ry }));
+  }
+  // the pith helmet: a khaki dome with a brim, lying on its side
+  const helmet = new THREE.Group(); helmet.position.set(x - 0.6, 0.12, z + 0.5); helmet.rotation.set(1.2, 0.4, 0);
+  helmet.add(K.mesh(new THREE.SphereGeometry(0.13, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), khaki, 0, 0, 0));
+  helmet.add(K.mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.012, 14), khaki, 0, 0, 0));
+  R.add(helmet);
+  // the lantern, still burning low. Nobody has filled it since 1943.
+  const lan = new THREE.Group(); lan.position.set(x + 0.5, 0, z + 0.7); R.add(lan);
+  const tin = K.mat('lanternTin', () => K.standard(0x4a4a3a, { metalness: 0.6, roughness: 0.5 }));
+  lan.add(K.mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.04, 8), tin, 0, 0.02, 0));
+  const wick = K.flame(0.2, 4); wick.position.y = 0.04; lan.add(wick);
+  for (const a of [0.4, 2.5, 4.6]) lan.add(K.mesh(new THREE.BoxGeometry(0.008, 0.2, 0.008), tin, Math.cos(a) * 0.065, 0.13, Math.sin(a) * 0.065));
+  lan.add(K.mesh(new THREE.CylinderGeometry(0.05, 0.075, 0.03, 8), tin, 0, 0.24, 0));
+  lan.add(K.mesh(new THREE.TorusGeometry(0.06, 0.008, 4, 10), tin, 0, 0.3, 0, { rx: Math.PI / 2 }));
+  // the canvas pack and the one who carried it
+  R.add(K.mesh(new THREE.BoxGeometry(0.4, 0.28, 0.2), khaki, x - 0.3, 0.14, z - 0.6, { ry: 0.7, rz: 0.2 }));
+  K.bones(R, x - 0.1, z + 0.9, 41, 7);
+  R.add(K.mesh(new THREE.PlaneGeometry(0.6, 0.9), K.mat('khakiDS', () => K.lambert(0xb8a070, { map: T.wraps, side: THREE.DoubleSide })), x - 0.2, 0.02, z + 0.9, { rx: -Math.PI / 2, rz: 0.6, cast: false }));
+  return new THREE.Vector3(x + 0.5, 0.35, z + 0.7);
 }
 
 export { mergeGeometries };

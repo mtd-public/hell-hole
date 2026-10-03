@@ -18,7 +18,7 @@ export class Hud {
 
   toast(text, secs = 2.2) { this.toastEl.textContent = text; this.toastEl.classList.add('on'); this.toastT = secs; }
   hurt(amount) { this.hurtT = Math.min(0.6, 0.2 + amount / 40); }
-  hitMarker(heart) { this.hitT = 0.12; this.xhair.classList.toggle('heart', !!heart); }
+  hitMarker(crit) { this.hitT = 0.12; this.xhair.classList.toggle('heart', !!crit); }
 
   // pips: ▮ per round, dim for empty, a gap for the chambered one
   pips(el, n, cap, reloading) {
@@ -52,11 +52,16 @@ export class Hud {
       this.pipsL.hidden = false;
       this.setText(this.reserve, `.45 ACP  ${p.reserve}`);
       this.setText(this.weapon, 'M1911A1 ×2');
-    } else {
+    } else if (p.weapon === 'shotgun') {
       this.pipsL.hidden = true;
       this.pips(this.pipsR, p.sg.tube, T.shotgun.tube, p.sg.loading);
       this.setText(this.reserve, `12 GA  ${p.shells}`);
       this.setText(this.weapon, 'REMINGTON 870');
+    } else {
+      this.pipsL.hidden = true;
+      this.pips(this.pipsR, p.bz.tube, 1, p.bz.reload > 0);
+      this.setText(this.reserve, `ROCKETS  ${p.rockets}`);
+      this.setText(this.weapon, 'M1 BAZOOKA · 1943');
     }
     this.setText(this.gren, p.grenades ? `MK 2 ×${p.grenades}` : '');
   }

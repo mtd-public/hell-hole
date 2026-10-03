@@ -61,11 +61,62 @@ await run('desktop', desk, async (page) => {
   await page.keyboard.press('g'); await page.waitForTimeout(2600);
   const boom = await page.evaluate(() => GAME.world.stats.kills >= 0);
   if (!boom) fail('desktop: grenade');
-  await page.evaluate(() => { const w = GAME.world; w.player.x = w.L.exit.x; w.player.z = w.L.exit.z + 0.5; });
+  await page.evaluate(() => { const w = GAME.world; w.player.reserve = 77; w.player.x = w.L.exit.x; w.player.z = w.L.exit.z + 0.5; });
   await page.waitForTimeout(400);
-  const end = await page.evaluate(() => [GAME.state, document.getElementById('e-title').textContent]);
+  const end = await page.evaluate(() => [GAME.state, document.getElementById('e-title').textContent, document.getElementById('b-again').textContent]);
   if (end[0] !== 'end') fail(`desktop: no end screen at the door (${end})`);
+  if (!/Depth II/.test(end[2])) fail(`desktop: no way down (${end[2]})`);
   console.log('desktop end', end);
+  // down the stair: Depth II, with what you carried
+  await page.click('#b-again');
+  await page.waitForFunction(() => GAME.state === 'play' && GAME.world.depth === 1, null, { timeout: 30000 });
+  const carried = await page.evaluate(() => GAME.world.player.reserve);
+  if (carried !== 77) fail(`desktop: loadout not carried (reserve ${carried})`);
+  // into the hypostyle with the bazooka, a rocket at the jackals
+  await page.evaluate(() => { const w = GAME.world, p = w.player; p.has.bazooka = true; p.bz.tube = 1; p.rockets = 2; p.weapon = 'bazooka'; p.x = 14.5 * 3; p.z = 20.5 * 3; p.yaw = 0; p.pitch = 0.02; });
+  await page.waitForTimeout(1500);
+  await page.mouse.down(); await page.waitForTimeout(60); await page.mouse.up();
+  await page.waitForTimeout(250);
+  const flying = await page.evaluate(() => GAME.world.rockets.length + GAME.world.stats.shots);
+  if (flying < 1) fail('desktop: no rocket');
+  await page.waitForTimeout(1500);
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/desktop-depth2.png` });
+  const d2 = await page.evaluate(() => ({ state: GAME.state, kills: GAME.world.stats.kills, hp: GAME.world.player.hp, ba: GAME.world.enemies.filter((e) => e.type === 'ba').length }));
+  console.log('desktop depth II', d2);
+});
+
+// a controller in the menus: a stubbed standard gamepad
+const padCtx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+await padCtx.addInitScript(() => {
+  window.__pad = { buttons: new Array(17).fill(0), axes: [0, 0, 0, 0] };
+  navigator.getGamepads = () => [{ id: 'stub pad', index: 0, connected: true, mapping: 'standard', buttons: window.__pad.buttons.map((v) => ({ pressed: v > 0.5, value: v })), axes: window.__pad.axes }];
+});
+await run('gamepad', padCtx, async (page) => {
+  const tap = async (i) => { await page.evaluate((i) => { window.__pad.buttons[i] = 1; }, i); await page.waitForTimeout(80); await page.evaluate((i) => { window.__pad.buttons[i] = 0; }, i); await page.waitForTimeout(80); };
+  const focused = () => page.evaluate(() => document.activeElement?.id || document.activeElement?.textContent);
+  const f0 = await focused();
+  await tap(13); // D-pad down
+  const f1 = await focused();
+  if (f0 === f1) fail(`gamepad: D-pad did not move focus (${f0})`);
+  await tap(0); // A: open what's focused (Settings)
+  const settingsOpen = await page.evaluate(() => !document.getElementById('s-settings').hidden);
+  if (!settingsOpen) fail(`gamepad: A did not open Settings (focus ${f1})`);
+  await tap(15); // D-pad right on the first control (Look): Dagger → Pigment
+  const style = await page.evaluate(() => GAME.settings.style);
+  if (style !== 'pigment') fail(`gamepad: D-pad right did not change the look (${style})`);
+  await tap(14);
+  await tap(1); // B: back
+  const back = await page.evaluate(() => !document.getElementById('s-title').hidden);
+  if (!back) fail('gamepad: B did not go back');
+  await tap(0); // A on Descend
+  await page.waitForFunction(() => GAME.state === 'play', null, { timeout: 30000 }).catch(() => fail('gamepad: A did not start'));
+  await tap(9); // Menu: pause
+  const paused = await page.evaluate(() => GAME.state);
+  if (paused !== 'pause') fail(`gamepad: Menu did not pause (${paused})`);
+  await tap(9);
+  const resumed = await page.evaluate(() => GAME.state);
+  if (resumed !== 'play') fail(`gamepad: Menu did not resume (${resumed})`);
+  console.log('gamepad', { f0, f1, style });
 });
 
 // phone, landscape, touch

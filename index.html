@@ -60,6 +60,7 @@
       <h1>Hell <span>Hole</span></h1>
       <p class="blurb">Your squad went in an hour ahead of you. The radio went quiet at the second chamber. Find the scarab door and go down.</p>
       <button id="b-start" class="primary">Descend</button>
+      <div id="depths" class="row" hidden></div>
       <div class="row">
         <button id="b-settings">Settings</button>
         <button id="b-mute">Sound: on</button>
@@ -68,7 +69,7 @@
         <tr><td>Move · jump</td><td>WASD · Space</td><td>Left stick · A</td></tr>
         <tr><td>Right gun · left gun</td><td>Left click · right click</td><td>RT · LT</td></tr>
         <tr><td>Reload · grenade</td><td>R · G</td><td>X · B</td></tr>
-        <tr><td>Swap weapon</td><td>Q · wheel · 1 / 2</td><td>Y</td></tr>
+        <tr><td>Weapons</td><td>1 · 2 · 3 · Q · wheel</td><td>Y · LB</td></tr>
         <tr><td>Pause</td><td>Esc · P</td><td>Menu</td></tr>
       </table>
       <p class="hint">Each trigger fires its own 1911. The heart scarab in a mummy's chest kills it in one shot.</p>
@@ -103,6 +104,7 @@
       <p class="blurb" id="e-blurb"></p>
       <dl class="stats" id="e-stats"></dl>
       <button id="b-again" class="primary">Try again</button>
+      <button id="b-replay" hidden>Replay</button>
     </div>
   </section>
 

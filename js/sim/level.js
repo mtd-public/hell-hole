@@ -52,6 +52,11 @@ export function parseLevel(def) {
         L.shrines.push({ x: x + di * (C / 2 - 0.35), z: z + dj * (C / 2 - 0.35), nx: -di, nz: -dj, wx: x + di * C / 2, wz: z + dj * C / 2 }); break;
       }
       case 'm': L.spawns.push({ type: 'mummy', x, z }); break;
+      case 'j': L.spawns.push({ type: 'jackal', x, z }); break;
+      case 'c': L.spawns.push({ type: 'mother', x, z }); break; // she blocks bodies (separate), not bullets
+      case 'v': for (let k = 0; k < 3; k++) L.spawns.push({ type: 'ba', x: x + Math.cos(k * 2.1) * 1.2, z: z + Math.sin(k * 2.1) * 1.2 }); break;
+      case 'z': L.pickups.push({ kind: 'bazooka', x, z }); break;
+      case 'q': L.pickups.push({ kind: 'rockets', x, z }); break;
       case 's': L.nests.push({ x, z }); break;
       case 'k': L.pickups.push({ kind: 'ammo', x, z }); break;
       case 'r': L.pickups.push({ kind: 'shotgun', x, z }); break;

@@ -4,8 +4,8 @@ import { m1911, hand, muzzleFlash } from './guns.js';
 import * as W from './weapons.js';
 import { TUNING } from '../sim/tuning.js';
 
-// The first-person hands. Twin M1911A1s (the left one mirrored), or the Remington 870 in both
-// hands. Everything here is presentation: recoil, slide-lock reload dips, the weapon swap,
+// The first-person hands. Twin M1911A1s (the left one mirrored), the Remington 870 in both
+// hands, or the expedition's bazooka on the right shoulder. Everything here is presentation: recoil, slide-lock reload dips, the weapon swap,
 // the grenade throw, walk bob and look sway. The muzzle light is a real light: firing in the
 // dark shows you the room for a frame.
 
@@ -34,6 +34,13 @@ export class Viewmodel {
     sgi.add(sflash);
     sg.visible = false; this.root.add(sg);
     this.sg = { g: sg, inner: sgi, flash: sflash, kick: 0, flashT: 0 };
+    // the bazooka, on the right shoulder
+    const bz = new THREE.Group(); const bzi = new THREE.Group(); bz.add(bzi);
+    bzi.add(W.bazooka()); W.fistsForBazooka(bzi);
+    const bflash = muzzleFlash(4); bflash.scale.setScalar(2.4); bflash.position.set(0, 0, -1.02); bflash.visible = false;
+    dropLights(bflash); bzi.add(bflash);
+    bz.visible = false; this.root.add(bz);
+    this.bz = { g: bz, flash: bflash, kick: 0, flashT: 0 };
     this.light = new THREE.PointLight(K.PAL.muzzleLight, 0, 11, 2); this.light.position.set(0, 0.0, -0.6); camera.add(this.light);
     this.lightT = 0;
     this.carry = new THREE.PointLight(0xffa060, 0.45, 1.2, 2); this.carry.position.set(0, 0.16, -0.32); camera.add(this.carry); // the hands always read
@@ -43,6 +50,7 @@ export class Viewmodel {
   event(e) {
     if (e.type === 'shot') {
       if (e.gun === 'S') { this.sg.kick = 1; this.sg.flashT = 0.06; this.flashLight(9); }
+      else if (e.gun === 'B') { this.bz.kick = 1; this.bz.flashT = 0.09; this.flashLight(14); }
       else { const g = this.guns[e.gun]; g.kick = 1; g.flashT = 0.045; this.flashLight(6); }
     }
     if (e.type === 'throw') this.guns.L.throwT = 0.45;
@@ -73,13 +81,22 @@ export class Viewmodel {
       g.rotation.set(0.02 + k * 0.32 - rl * 0.5, G.s * BASE.yaw + rl * G.s * 0.4, G.s * BASE.roll);
     }
     const S = this.sg;
-    S.g.visible = !pist;
+    S.g.visible = p.weapon === 'shotgun';
     S.kick = Math.max(0, S.kick - dt / 0.22);
     if (S.flashT > 0) S.flashT -= dt;
     S.flash.visible = S.flashT > 0;
     const loading = p.sg.loading ? 1 : 0, k = S.kick * S.kick;
     S.g.position.set(0.17 + bx - this.swayX * 0.05, -0.21 + by - sw * 0.3 + this.swayY * 0.04 - loading * 0.04, -0.3 + k * 0.09);
     S.g.rotation.set(0.05 + k * 0.28, 0.1 + loading * 0.25, -0.1 - loading * 0.35);
+    // the bazooka: a shove back into the shoulder; reloading drops it to load from behind
+    const B = this.bz;
+    B.g.visible = p.weapon === 'bazooka';
+    B.kick = Math.max(0, B.kick - dt / 0.35);
+    if (B.flashT > 0) B.flashT -= dt;
+    B.flash.visible = B.flashT > 0;
+    const bk = B.kick * B.kick, rl = p.bz.reload > 0 ? Math.sin(Math.min(1, 1 - p.bz.reload / TUNING.bazooka.reload) * Math.PI) : 0;
+    B.g.position.set(0.3 + bx - this.swayX * 0.05, -0.15 + by - sw * 0.35 - rl * 0.22 + this.swayY * 0.04, -0.1 + bk * 0.12);
+    B.g.rotation.set(0.03 + bk * 0.12 - rl * 0.35, 0.1 + rl * 0.3, -0.04 - rl * 0.2);
     if (this.lightT > 0) { this.lightT -= dt; if (this.lightT <= 0) this.light.intensity = 0; }
   }
 }

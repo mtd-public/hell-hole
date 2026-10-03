@@ -6,19 +6,30 @@ import * as W from './weapons.js';
 import * as TX from './textures.js';
 import { dreadify } from './dread.js';
 
-// Monsters on screen. Mummies are baked from the bestiary builders (three variants, one mesh
-// per material each) and animated as a whole body: shamble, rear back for the swipe, fall
-// backward and sink. Scarabs are instanced: one InstancedMesh per material for the whole swarm.
+// Monsters on screen, all baked from the bestiary builders (one mesh per material) and
+// animated as whole bodies:
+//   mummy   three variants: shamble, rear back for the swipe, fall backward and sink
+//   jackal  two poses (blade low, blade raised): stalk, crouch, lunge, slash, reel, fall forward
+//   ba      two wing frames swapped at 9 Hz (a PS1 flap): orbit, shiver before the dive, tumble
+//   mother  bob, a jolt when she births, gone in a burst of alabaster when she breaks
+// Scarabs are instanced: one InstancedMesh per material for the whole swarm. Rockets carry
+// one of two pooled lights and leave smoke.
 
 const SCARAB_CAP = 256;
 const _o = new THREE.Object3D();
+const bake = (g) => { const b = K.bake(g, mergeGeometries); dreadify(b); return b; };
 
 export class Actors {
-  constructor(scene) {
-    this.scene = scene;
-    this.templates = [1, 3, 5].map((s) => K.bake(M.mummy(s), mergeGeometries));
-    this.templates.forEach((tp) => dreadify(tp)); // clones share these materials: patch them once here
-    this.mummies = new Map();
+  constructor(scene, fx) {
+    this.scene = scene; this.fx = fx;
+    this.T = {
+      mummy: [1, 3, 5].map((s) => bake(M.mummy(s))),
+      jackalLow: bake(M.jackal(1, 'low')), jackalRaise: bake(M.jackal(1, 'raise')),
+      baUp: bake(M.ba(1, 0.0)), baDown: bake(M.ba(1, 0.6)),
+      mother: bake(M.canopic(3)),
+      rocket: bake(W.rocket()), grenade: bake(W.grenade()),
+    };
+    this.views = new Map();
     const sb = K.bake(M.scarab(1), mergeGeometries);
     this.swarm = sb.children.map((me) => {
       const im = new THREE.InstancedMesh(me.geometry, me.material, SCARAB_CAP);
@@ -26,39 +37,96 @@ export class Actors {
       scene.add(im); return im;
     });
     this.grenadeMeshes = [];
-    this.grenadeTemplate = K.bake(W.grenade(), mergeGeometries); dreadify(this.grenadeTemplate);
-    this.flash = new Map(); // mummy id → seconds of hit jolt left
+    this.rocketViews = [];
+    this.rocketLights = [0, 1].map(() => { const l = new THREE.PointLight(0xffb060, 0, 12, 2); scene.add(l); return l; });
+    this.flash = new Map(); // id → seconds of hit jolt left
   }
 
   hit(id) { this.flash.set(id, 0.12); }
 
+  view(e) {
+    let v = this.views.get(e.id);
+    if (v) return v;
+    const g = new THREE.Group(), T = this.T;
+    v = { g };
+    if (e.type === 'mummy') { v.body = T.mummy[e.id % 3].clone(); g.add(v.body); }
+    else if (e.type === 'jackal') { v.body = new THREE.Group(); v.low = T.jackalLow.clone(); v.raise = T.jackalRaise.clone(); v.body.add(v.low, v.raise); g.add(v.body); }
+    else if (e.type === 'ba') { v.body = new THREE.Group(); v.up = T.baUp.clone(); v.down = T.baDown.clone(); v.body.add(v.up, v.down); g.add(v.body); }
+    else { v.body = T.mother.clone(); g.add(v.body); }
+    this.scene.add(g); this.views.set(e.id, v);
+    return v;
+  }
+
   update(world, t, dt) {
     for (const e of world.enemies) {
-      let g = this.mummies.get(e.id);
-      if (!g) {
-        g = new THREE.Group(); const body = this.templates[e.id % 3].clone(); g.add(body); g.userData.body = body;
-        this.scene.add(g); this.mummies.set(e.id, g);
-      }
-      const body = g.userData.body;
-      g.position.set(e.x, 0, e.z); g.rotation.y = e.yaw + Math.PI; // built facing +z
+      const v = this.view(e), g = v.g, body = v.body;
+      g.position.set(e.x, e.y || 0, e.z); g.rotation.y = e.yaw + Math.PI; // built facing +z
       body.position.set(0, 0, 0); body.rotation.set(0, 0, 0);
-      if (e.state === 'dead') {
-        const k = Math.min(1, e.deadT / 0.55);
-        body.rotation.x = -k * k * Math.PI * 0.48;               // topples backward from the feet
-        body.position.y = -Math.max(0, e.deadT - 1.4) * 0.35;    // then the sand takes it
-        g.visible = e.deadT < 4;
-        continue;
-      }
-      if (e.state === 'windup') { body.rotation.x = -0.24; body.position.y = 0.04; }
-      else if (e.state === 'chase') {
-        const ph = t * 4.4 + e.phase;
-        body.position.y = Math.abs(Math.sin(ph)) * 0.05;
-        body.rotation.z = Math.sin(ph) * 0.08; body.rotation.x = 0.06;
-      } else body.rotation.z = Math.sin(t * 0.7 + e.phase) * 0.03;
-      const f = this.flash.get(e.id);
-      if (f > 0) { body.rotation.x -= f * 1.6; this.flash.set(e.id, f - dt); }
+      const f = this.flash.get(e.id) || 0;
+      if (f > 0) this.flash.set(e.id, f - dt);
+      if (e.type === 'mummy') this.mummy(e, v, t, f);
+      else if (e.type === 'jackal') this.jackal(e, v, t, f);
+      else if (e.type === 'ba') this.ba(e, v, t, f);
+      else this.mother(e, v, t, f);
     }
-    // the swarm
+    this.scarabs(world, t);
+    this.projectiles(world, t, dt);
+  }
+
+  mummy(e, v, t, f) {
+    const b = v.body;
+    if (e.dead) {
+      const k = Math.min(1, e.deadT / 0.55);
+      b.rotation.x = -k * k * Math.PI * 0.48;               // topples backward from the feet
+      b.position.y = -Math.max(0, e.deadT - 1.4) * 0.35;    // then the sand takes it
+      v.g.visible = e.deadT < 4; return;
+    }
+    if (e.state === 'windup') { b.rotation.x = -0.24; b.position.y = 0.04; }
+    else if (e.state === 'chase') { const ph = t * 4.4 + e.phase; b.position.y = Math.abs(Math.sin(ph)) * 0.05; b.rotation.z = Math.sin(ph) * 0.08; b.rotation.x = 0.06; }
+    else b.rotation.z = Math.sin(t * 0.7 + e.phase) * 0.03;
+    b.rotation.x -= f * 1.6;
+  }
+
+  jackal(e, v, t, f) {
+    const b = v.body, raised = e.state === 'windup' || e.state === 'idle';
+    v.low.visible = !raised; v.raise.visible = raised;
+    if (e.dead) {
+      const k = Math.min(1, e.deadT / 0.6);
+      b.rotation.x = k * k * Math.PI * 0.47;                // falls forward onto its face
+      b.position.y = -Math.max(0, e.deadT - 1.6) * 0.4;
+      v.g.visible = e.deadT < 4.5; return;
+    }
+    const ph = t * 6 + e.phase;
+    switch (e.state) {
+      case 'crouch': b.position.y = -0.28; b.rotation.x = 0.3; break;          // the read: it drops, then comes
+      case 'lunge': b.position.y = -0.12; b.rotation.x = 0.42; break;
+      case 'windup': b.rotation.x = -0.12; break;
+      case 'stagger': b.rotation.x = -0.35 + Math.sin(t * 40) * 0.05; b.rotation.z = Math.sin(t * 23) * 0.08; break;
+      case 'chase': b.position.y = Math.abs(Math.sin(ph)) * 0.06; b.rotation.z = Math.sin(ph) * 0.05; b.rotation.x = 0.1; break;
+      default: b.rotation.z = Math.sin(t * 0.6 + e.phase) * 0.02;
+    }
+    b.rotation.x -= f * 1.2;
+  }
+
+  ba(e, v, t, f) {
+    const b = v.body, flapFast = e.state === 'tele' || e.state === 'climb';
+    const frame = Math.floor(t * (flapFast ? 16 : 9) + e.phase) % 2;
+    v.up.visible = frame === 0; v.down.visible = frame === 1;
+    if (e.dead) { v.up.visible = true; v.down.visible = false; b.rotation.set(e.deadT * 9, 0, e.deadT * 6); v.g.visible = e.deadT < 2.5; return; }
+    if (e.state === 'tele') { b.position.set(Math.sin(t * 70) * 0.04, 0, 0); b.rotation.x = -0.2; }
+    else if (e.state === 'dive') b.rotation.x = 0.7;
+    else b.rotation.z = Math.sin(t * 3 + e.phase) * 0.2;
+    b.rotation.x -= f * 2;
+  }
+
+  mother(e, v, t, f) {
+    const b = v.body;
+    if (e.dead) { v.g.visible = false; return; }
+    b.position.y = Math.sin(t * 1.3 + e.phase) * 0.12;
+    b.rotation.z = Math.sin(t * 0.9 + e.phase) * 0.04 + f * 0.8;
+  }
+
+  scarabs(world, t) {
     let n = 0;
     for (const s of world.scarabs) {
       if (n >= SCARAB_CAP) break;
@@ -71,13 +139,31 @@ export class Actors {
       n++;
     }
     for (const im of this.swarm) { im.count = n; im.instanceMatrix.needsUpdate = true; }
-    // grenades in flight
+  }
+
+  projectiles(world, t, dt) {
     world.grenades.forEach((gr, k) => {
       let me = this.grenadeMeshes[k];
-      if (!me) { me = this.grenadeTemplate.clone(); this.scene.add(me); this.grenadeMeshes[k] = me; }
+      if (!me) { me = this.T.grenade.clone(); this.scene.add(me); this.grenadeMeshes[k] = me; }
       me.visible = true; me.position.set(gr.x, gr.y, gr.z); me.rotation.set(gr.spin, gr.spin * 0.7, 0);
     });
     for (let k = world.grenades.length; k < this.grenadeMeshes.length; k++) this.grenadeMeshes[k].visible = false;
+    // rockets: the round, its exhaust, its own light, a smoke trail
+    world.rockets.forEach((r, k) => {
+      let v = this.rocketViews[k];
+      if (!v) {
+        const g = new THREE.Group(); g.add(this.T.rocket.clone());
+        const fl = K.flame(0.45, 5); fl.rotation.x = Math.PI / 2; fl.position.z = 0.2; g.add(fl); dreadify(fl);
+        this.scene.add(g); v = this.rocketViews[k] = { g };
+      }
+      v.g.visible = true; v.g.position.set(r.x, r.y, r.z);
+      v.g.lookAt(r.x - r.vx, r.y - r.vy, r.z - r.vz);
+      if (this.fx && Math.random() < dt * 40) this.fx.burst('smoke', r.x - r.vx * 0.02, r.y, r.z - r.vz * 0.02, 1, { speed: 0.3, size: 0.22, life: 1.1, up: 0.5 });
+      const l = this.rocketLights[k];
+      if (l) { l.position.set(r.x, r.y, r.z); l.intensity = 14 + Math.sin(t * 50) * 3; }
+    });
+    for (let k = world.rockets.length; k < this.rocketViews.length; k++) this.rocketViews[k].g.visible = false;
+    for (let k = world.rockets.length; k < this.rocketLights.length; k++) this.rocketLights[k].intensity = 0;
   }
 }
 
@@ -91,6 +177,8 @@ const KINDS = {
   gore: { mat: () => K.glow(0xff2034, 'blood'), grav: 9, cap: 128 },
   chitin: { mat: () => K.lambert(0x1e6e58), grav: 12, cap: 128 },
   ember: { mat: () => K.glow(0xff7a20), grav: -1.5, cap: 128 },
+  smoke: { mat: () => K.lambert(0x5a5048), grav: -0.4, cap: 256 },
+  chip: { mat: () => K.lambert(0xe8dcc8), grav: 10, cap: 192 }, // alabaster and bone
 };
 
 export class Fx {

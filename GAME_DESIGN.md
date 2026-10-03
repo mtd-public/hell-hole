@@ -10,7 +10,7 @@
   torch light pool), [Vertical-Vantage](https://github.com/mtd-public/Vertical-Vantage)
   (first-person core, Egypt tomb kit), [dr-mow](https://github.com/mtd-public/dr-mow) (PS1
   retro pipeline, synth audio)
-- **Stage:** Depth I playable ([play](https://claude.ai/artifact/LgwBE6F1kzjzdbSh2d6EX7)).
+- **Stage:** Depths I and II playable ([play](https://claude.ai/artifact/LgwBE6F1kzjzdbSh2d6EX7)).
 - **Decided:** Dagger look at 360 lines; a 1980s soldier; the bazooka and Mk 2 grenades are 1940s
   finds in the pyramid; the Staff of Ra is found at Depth III.
 
@@ -72,9 +72,9 @@ Live numbers are in `js/sim/tuning.js`, each with its reason.
 |---|---|---|
 | The Wrapped (mummy) | Slow shambler; steps out of wall niches | Heart scarab (one shot) |
 | Scarabs | Swarms of 20–40, climb walls | One bullet each |
-| Jackal Warden | 2.5 m khopesh guard, telegraphs the slash | Head |
+| Jackal Warden | 2.5 m khopesh guard: crouches, lunges, telegraphs the slash | Head (×3); staggers if hurt fast |
 | Ba | Skull on painted falcon wings; flocks circle, then dive | Two shots |
-| Canopic Mother | Floating spawner: ba from the mouth, scarabs from cracks | Crimson cracks |
+| Canopic Mother | Floating spawner: ba from the mouth (scarabs from cracks: later) | Crimson seam (×2); her brood dies with her |
 | Serqet | Horse-sized scorpion; tail strike at 3 m | Stinger, while raised |
 | **Ammit** (boss, Depth IV) | Crocodile, lion, hippo; charges and snaps | Gullet, while stunned by the scales |
 
@@ -95,7 +95,48 @@ stand (bones in woodland, a helmet, the 870, shells) → north corridors (a mumm
 of pillars (eight columns, four braziers, five mummies, two nests, an ankh shrine, a 1940s grenade
 crate) → the exit corridor → the scarab door. 42 sim checks prove it's finishable.
 
+## 8. Depth II as built: Hypostyle of Night
+
+30 × 35 cells. You arrive with what you carried down (at least 60 health), or with the depth's
+starting kit (870, 70 rounds, 16 shells, 2 grenades) from the title screen.
+
+- **The guard room:** four columns, two braziers, two Jackal Wardens. Jackals crouch before
+  they lunge (a snarl is the cue), then wind up the khopesh; four damage inside a moment
+  staggers one.
+- **The expedition's camp** (west): crates, a pith helmet, a canvas pack, the bones of whoever
+  carried the **bazooka** down, and their lantern, still burning low (the one small light that
+  says *here*). Rockets, grenades, two mummies and a scarab nest.
+- **The hypostyle:** fifteen columns, six braziers, four jackals, three mummies, two flocks of
+  ba and the first **Canopic Mother**. Ba circle, screech, then dive; only one dives at a time
+  across the level, so a flock is a rhythm, not a wall. The Mother floats and births a ba every
+  3.2 s while she sees you (five at most); a direct rocket breaks her, a near miss only cracks
+  her. An east alcove holds the depth's ankh shrine.
+- **The altar:** the second Mother between two jackals and two braziers, under the scarab door.
+
+| Number | Value | Why |
+|---|---|---|
+| Rockets in the level | 2 with the bazooka + 2 + 2 crates | Six for two Mothers and the jackal packs: enough if you aim |
+| Back-blast | 10 damage if a wall is within 1.1 m behind | The 1943 tube punishes firing from a corner |
+| Ba dive gap | one dive per 0.55 s, level-wide | Readable at 360 lines |
+| Jackal head | 3× | Rewards the aim the lunge makes hard |
+
+Menus take a controller: D-pad or left stick moves, left/right changes a setting, A chooses,
+B backs out, Menu pauses and resumes.
+
 ## Delta log
+
+### claude/trusting-babbage-3fhzep: Depth II
+
+- `js/sim/`: world.js split into `common.js`, `arms.js`, `enemies.js`. Jackal Wardens (crouch,
+  lunge, windup, stagger, head ×3), ba (orbit, screech, dive, a level-wide dive gap), the Canopic
+  Mother (births ba, seam ×2, brood dies with her), the bazooka (rockets, splash, back-blast,
+  reload), `loadout()` carry-over between depths, `DEPTHS[1]`. Sim checks 42 → 98.
+- `js/render/`: jackal, ba (two-frame flap) and Mother actors; rockets in flight carrying pool
+  lights and smoke; the bazooka viewmodel; the expedition camp and its lantern; rocket crates.
+- `js/ui/menu-nav.js`: gamepad navigation for every menu. Title screen depth select, saved
+  progress, "Descend to Depth II" on the end screen, Start to pause and resume.
+- Verified: sim checks 98/98; `tools/smoke.mjs` (desktop through the door into Depth II and a
+  rocket; a stubbed gamepad through Settings and pause; phone), 0 console errors.
 
 ### claude/trusting-babbage-3fhzep: Depth I playable
 
